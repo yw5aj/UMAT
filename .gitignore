@@ -44,3 +44,6 @@ Temporary Items
 
 # Old files
 archive
+
+# Binary files
+*.exe
