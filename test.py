@@ -74,7 +74,7 @@ def get_C_MJ_theoretical(F, params):
                             np.eye(3)[i, j] * B_bar[k, l] + 
                             B_bar[i, j] * np.eye(3)[k, l]) + 
                             2./9. * np.eye(3)[i, j] * np.eye(3)[k, l] *
-                            np.trace(B_bar) + 2. / params['D'] * (2. * J - 1.)
+                            np.trace(B_bar)) + (2. / params['D'] * (2. * J - 1.)
                             * np.eye(3)[i, j] * np.eye(3)[k, l])
     return C_MJ_theoretical
 
@@ -87,4 +87,4 @@ if __name__ == '__main__':
     params_nh = dict(G=1e5, D=0.1, model='Neo-Hookean')
     C_MJ_theoretical = get_C_MJ_theoretical(F, params_nh)
     C_MJ_numerical  = get_C_MJ_numerical(F, params_nh, eps=EPS)
-    np.all([C_MJ_theoretical, C_MJ_numerical])
+    print(np.allclose(C_MJ_theoretical, C_MJ_numerical))
