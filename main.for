@@ -1,6 +1,6 @@
       program main
 c The main program used for testing      
-      real det delta
+      real det delta pertf
       real f(3, 3), j, fbar(3, 3), bbar(3, 3), sigma(3, 3), c10, d1
       integer k1, k2, k3, k4
 c      
@@ -40,6 +40,15 @@ c Return delta(i, j) as the Kronecker delta
       else
           delta = 0
       end if
+      return
+      end
+
+
+      real function pertf(f, i, j)
+      real f(3, 3)
+      integer i, j
+c Return the perturbation of F on its (i, j) component
+      do 
       return
       end
 
