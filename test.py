@@ -17,6 +17,9 @@ def perturb(F, i, j, eps=EPS):
     return F_hat
 
 
+def get_C
+
+
 
 def get_stress(F, params, output='Cauchy'):
     """
@@ -38,34 +41,34 @@ def get_stress(F, params, output='Cauchy'):
     return stress
 
 
-def get_C_MJ_ij(F, params, i, j, eps=EPS):
+def get_C_CJ_ij(F, params, i, j, eps=EPS):
     J = np.linalg.det(F)
     tau = get_stress(F, params, output='Kirchoff')
     tau_perturb = get_stress(perturb(F, i, j, eps=eps), params, 
                              output='Kirchoff')
-    C_MJ_ij = 1. / J / eps * (tau_perturb - tau)
-    return C_MJ_ij
+    C_CJ_ij = 1. / J / eps * (tau_perturb - tau)
+    return C_CJ_ij
 
 
-def get_C_MJ_numerical(F, params, eps=EPS):
-    C_MJ_numerical = np.empty([3, 3, 3, 3])
+def get_C_CJ_numerical(F, params, eps=EPS):
+    C_CJ_numerical = np.empty([3, 3, 3, 3])
     for i in range(3):
         for j in range(3):
-            C_MJ_numerical[i, j] = get_C_MJ_ij(F, params, i, j, eps=eps)
-    return C_MJ_numerical
+            C_CJ_numerical[:, :, i, j] = get_C_CJ_ij(F, params, i, j, eps=eps)
+    return C_CJ_numerical
 
 
-def get_C_MJ_theoretical(F, params):
+def get_C_CJ_theoretical(F, params):
     J = np.linalg.det(F)
     F_bar = J**(-1./3.) * F
     B_bar = F_bar.dot(F_bar.T)
-    C_MJ_theoretical = np.empty([3, 3, 3, 3])
+    C_CJ_theoretical = np.empty([3, 3, 3, 3])
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 for l in range(3):
                     if params['model'] == 'Neo-Hookean':
-                        C_MJ_theoretical[i, j, k, l] = 2. / J * params['G'] *\
+                        C_CJ_theoretical[i, j, k, l] = 2. / J * params['G'] *\
                             (0.5 * (np.eye(3)[i, k] * B_bar[j, l] + 
                             B_bar[i, k] * np.eye(3)[j, l] +
                             np.eye(3)[i, l] * B_bar[j, k] +
@@ -76,7 +79,7 @@ def get_C_MJ_theoretical(F, params):
                             2./9. * np.eye(3)[i, j] * np.eye(3)[k, l] *
                             np.trace(B_bar)) + (2. / params['D'] * (2. * J - 1.)
                             * np.eye(3)[i, j] * np.eye(3)[k, l])
-    return C_MJ_theoretical
+    return C_CJ_theoretical
 
 
 # %% Main code
@@ -85,6 +88,6 @@ if __name__ == '__main__':
     F = np.eye(3) + np.random.random([3, 3])
     # %% Get related quantities
     params_nh = dict(G=1e5, D=0.1, model='Neo-Hookean')
-    C_MJ_theoretical = get_C_MJ_theoretical(F, params_nh)
-    C_MJ_numerical  = get_C_MJ_numerical(F, params_nh, eps=EPS)
-    print(np.allclose(C_MJ_theoretical, C_MJ_numerical))
+    C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
+    C_CJ_numerical  = get_C_CJ_numerical(F, params_nh, eps=EPS)
+    print(np.allclose(C_CJ_theoretical, C_CJ_numerical))
