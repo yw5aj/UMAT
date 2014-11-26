@@ -4,6 +4,14 @@ from IPython.display import display
 import numpy as np
 
 
+def tensorprod(a, b, out=None):
+    """
+    Returns the tensor product of two ndarray a and b.
+    
+    """
+    return np.outer(a, b, out=out).reshape(a.shape+b.shape)
+
+
 if __name__ == '__main__':
     init_printing()
     # Define common variables
