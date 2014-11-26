@@ -17,9 +17,6 @@ def perturb(F, i, j, eps=EPS):
     return F_hat
 
 
-def get_C
-
-
 
 def get_stress(F, params, output='Cauchy'):
     """
