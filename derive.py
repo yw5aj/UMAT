@@ -6,8 +6,37 @@ import numpy as np
 
 def tensorprod(a, b, out=None):
     """
-    Returns the tensor product of two ndarray a and b.
+    Returns the tensor product of two tensors.
     
+    Given two tensors `a` and `b`, its tensor product `c` is
+    ``c[i1, i2, i3, ..., iM, j1, j2, j3, ..., jN] = a[i1, i2, i3, ..., iM] *
+    b[j1, j2, j3, ..., jN]``.
+    
+    Equivalent ``numpy.outer(a, b, out=out).reshape(a.shape+b.shape)``.
+    
+    Parameters
+    ----------
+    a : array_like, a.ndim >= 1
+        First input tensor.
+    b : array_like, b.ndim >= 1
+        Second input tensor.
+    out : ndarray, out.ndim = a.ndim + b.ndim
+        A location where the result is stored
+    
+    Returns
+    -------
+    out : ndarray, out.ndim = a.ndim + b.ndim
+        ``out[i1, i2, i3, ..., iM, j1, j2, j3, ..., jN] = a[i1, i2, i3, ..., 
+        iM] * b[j1, j2, j3, ..., jN]``
+    
+    See also
+    --------
+    outer, einsum, tensordot
+    
+    References
+    ----------
+    .. [1] : Holzapfel, Gerhard A. Nonlinear solid mechanics. Vol. 24. 
+             Chichester: Wiley, 2000.
     """
     return np.outer(a, b, out=out).reshape(a.shape+b.shape)
 
@@ -56,7 +85,6 @@ if __name__ == '__main__':
                             for p in range(3)])) + \
                         bbar[i, k] * bbar[j, l] + bbar[i, l] * bbar[j, k]
     # Get C^sigmaJ_iso
-#    c_sigmaj_iso = np.full((3, 3, 3, 3), S(0))
     c_tauj_iso = \
         2 * (diff(psi_iso, ibar_1) + ibar_1 * diff(psi_iso, ibar_2)) * h_1 +\
         (-2) * diff(psi_iso, ibar_2) * h_2 + 4 * (diff(psi_iso, ibar_1, 2) +
@@ -78,7 +106,4 @@ if __name__ == '__main__':
         3, 3, 3, 3)))
     c_tauj_vol = det * (det * diff(psi_vol, det, 2) + diff(psi_vol, det)) * \
         np.outer(delta, delta).reshape((3, 3, 3, 3))
-    
-    # Get c_iso
-#    c_iso = 2 / j * ().dot(h_1)
     

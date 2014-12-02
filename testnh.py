@@ -1,9 +1,6 @@
 # %% Definition section
 import numpy as np
-
-
-# Define constants
-EPS = 1e-8
+from constants import EPS
 
 
 def perturb(F, i, j, eps=EPS):
@@ -81,10 +78,10 @@ def get_C_CJ_theoretical(F, params):
 
 # %% Main code
 if __name__ == '__main__':  
-    np.random.seed()
-    F = np.eye(3) + np.random.random([3, 3])
+    from constants import dfgrd as F
     # %% Get related quantities
-    params_nh = dict(G=1e5, D=0.1, model='Neo-Hookean')
+    params_nh = dict(G=1e5, D=.1, model='Neo-Hookean')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
     C_CJ_numerical  = get_C_CJ_numerical(F, params_nh, eps=EPS)
-    print(np.allclose(C_CJ_theoretical, C_CJ_numerical))
+#    print(np.allclose(C_CJ_theoretical, C_CJ_numerical))
+    print(get_stress(F, params_nh, output='Cauchy'))
