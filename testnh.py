@@ -78,7 +78,7 @@ def get_C_CJ_theoretical(F, params):
 
 # %% Main code
 if __name__ == '__main__':  
-    from constants import dfgrd as F
+    from constants import f as F
     # %% Get related quantities
     params_nh = dict(G=1e5, D=.1, model='Neo-Hookean')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
