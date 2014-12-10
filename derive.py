@@ -26,17 +26,14 @@ if __name__ == '__main__':
     lambdabar_1 = sqrt(lambda_square[0])
     lambdabar_2 = sqrt(lambda_square[1])
     lambdabar_3 = sqrt(lambda_square[2])
-    det = symbols('J')
-    fbar_11, fbar_12, fbar_13, fbar_21, fbar_22, fbar_23, fbar_31, fbar_32,\
-        fbar_33 = symbols('''
-        Fbar_11, Fbar_12, Fbar_13, Fbar_21, Fbar_22, Fbar_23, Fbar_31,
-        Fbar_32, Fbar_33''')
-    fbar = np.array([[fbar_11, fbar_12, fbar_13], [fbar_21, fbar_22, fbar_23], 
-                     [fbar_31, fbar_32, fbar_33]])
-    bbar = fbar.dot(fbar.T)
+    det = symbols('J', positive=True)
+    bbar_11, bbar_12, bbar_13, bbar_22, bbar_23, bbar_33 = symbols('''
+        bbar_11, bbar_12, bbar_13, bbar_22, bbar_23, bbar_33''', real=True)
+    bbar = np.array([[bbar_11, bbar_12, bbar_13], [bbar_12, bbar_22, bbar_23], 
+                     [bbar_13, bbar_23, bbar_33]])
     # Define strain energy function
-    d_1 = symbols('D_1')
-    mu, alpha = symbols('mu, alpha')
+    d_1 = symbols('D_1', positive=True)
+    mu, alpha = symbols('mu, alpha', positive=True)
     psi_iso = 2 * mu / alpha * (lambdabar_1**alpha + lambdabar_2**alpha
         + lambdabar_3**alpha - 3)
     psi_vol = 1/d_1*(det-1)**2
@@ -52,7 +49,8 @@ if __name__ == '__main__':
     for i, row in enumerate(sigma_iso):
         for j, item in enumerate(row):
             new_item = item.subs([(ibar_1, np.trace(bbar)), (ibar_2, S(1)/2*(
-                np.trace(bbar)**2-np.trace(bbar.dot(bbar))))])
+                np.trace(bbar)**2-np.trace(bbar.dot(bbar)))), (mu, 1000), 
+                (alpha, 2)])
             sigma_iso[i, j] = simplify(new_item)
 """    
     # Define H_1
