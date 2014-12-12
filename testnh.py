@@ -1,9 +1,10 @@
 # %% Definition section
 import numpy as np
+import matplotlib.pyplot as plt
 from constants import EPS
 
 
-def get_stress_numerical_S(F, params, eps_s=EPS, output='Cauchy'):
+def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     def get_psi(C, params):
         J = np.sqrt(np.linalg.det(C))
         Cbar = J**(-2./3.) * C
@@ -51,7 +52,7 @@ def get_stress_theoretical(F, params, output='Cauchy', **keywords):
 
 
 def get_C_CJ_ij(F, params, i, j, eps_c=EPS, eps_s=EPS,
-                get_stress=get_stress_numerical_S):
+                get_stress=get_stress_numerical):
     def perturb(F, i, j, eps_c=EPS):
         """
         To purturb deformation gradient on its (i, j) component
@@ -69,12 +70,13 @@ def get_C_CJ_ij(F, params, i, j, eps_c=EPS, eps_s=EPS,
     return C_CJ_ij
 
 
-def get_C_CJ_numerical(F, params, eps_c=EPS, eps_s=EPS):
+def get_C_CJ_numerical(F, params, get_stress=get_stress_numerical, 
+                       eps_c=EPS, eps_s=EPS):
     C_CJ_numerical = np.empty([3, 3, 3, 3])
     for i in range(3):
         for j in range(3):
             C_CJ_numerical[:, :, i, j] = get_C_CJ_ij(F, params, i, j, 
-                eps_c=eps_c, eps_s=eps_s)
+                eps_c=eps_c, eps_s=eps_s, get_stress=get_stress)
     return C_CJ_numerical
 
 
@@ -106,8 +108,18 @@ def get_C_CJ_theoretical(F, params):
 if __name__ == '__main__':  
     from constants import f as F
     # %% Get related quantities
-    params_nh = dict(G=1e5, D=.1, model='Neo-Hookean')
+    params_nh = dict(G=80e3, D=2e-1, model='Neo-Hookean')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
-    C_CJ_numerical  = get_C_CJ_numerical(F, params_nh, eps_c=EPS)
-#    print(np.allclose(C_CJ_theoretical, C_CJ_numerical))
-    print(get_stress_theoretical(F, params_nh, output='Cauchy'))
+    C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=1e-8, eps_s=1e-8)
+    C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=1e-6, eps_s=1e-4)
+    print(np.allclose(C_CJ_theoretical, C_CJ_numerical_s))
+    err = np.empty((13, 13))
+    for i in range(13):
+        for j in range(13):
+            eps_c = np.power(10., -1*i)
+            eps_s = np.power(10., -1*j)
+            C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
+            C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=eps_c, eps_s=eps_s)
+            C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=eps_c, eps_s=eps_s)
+            err[i, j] = np.abs((C_CJ_numerical_s - C_CJ_theoretical)/C_CJ_theoretical).sum()
+    plt.imshow(err, vmin=0, vmax=1)
