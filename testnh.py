@@ -14,27 +14,6 @@ def perturb(F, i, j, eps=EPS):
     return F_hat
 
 
-def get_stress_numerical_P(F, params, output='Cauchy'):
-    def get_psi(F, params):
-        J = np.linalg.det(F)
-        Fbar = J**(-1./3.)*F
-        Bbar = Fbar.dot(Fbar.T)
-        Ibar1 = np.trace(Bbar)        
-        if params['model'] == 'Neo-Hookean':
-            psi = params['G'] * (Ibar1-3.) + 1./params['D']*(J-1.)**2
-        return psi    
-    J = np.linalg.det(F)
-    P = np.empty((3, 3))
-    psi = get_psi(F, params)
-    for i in range(3):
-        for j in range(3):
-            e_i, e_j = np.eye(3)[[i, j]]
-            P[i, j] = (get_psi(F + EPS*np.tensordot(e_i, e_j, 0), params) 
-                - psi) / EPS
-    sigma = 1/J*P.dot(F.T)
-    return sigma
-
-
 def get_stress_numerical_S(F, params, output='Cauchy'):
     def get_psi(C, params):
         J = np.sqrt(np.linalg.det(C))
