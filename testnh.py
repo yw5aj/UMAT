@@ -3,18 +3,7 @@ import numpy as np
 from constants import EPS
 
 
-def perturb(F, i, j, eps=EPS):
-    """
-    To purturb deformation gradient on its (i, j) component
-    """
-    e_i, e_j = np.eye(3)[[i, j]]
-    del_F = eps/2. * (np.outer(e_i, e_j).dot(F)
-        + np.outer(e_j, e_i).dot(F))
-    F_hat = F + del_F
-    return F_hat
-
-
-def get_stress_numerical_S(F, params, output='Cauchy'):
+def get_stress_numerical_S(F, params, eps_s=EPS, output='Cauchy'):
     def get_psi(C, params):
         J = np.sqrt(np.linalg.det(C))
         Cbar = J**(-2./3.) * C
@@ -29,14 +18,19 @@ def get_stress_numerical_S(F, params, output='Cauchy'):
     for i in range(3):
         for j in range(3):
             e_i, e_j = np.eye(3)[[i, j]]
-            S[i, j] = (get_psi(C + EPS*(np.tensordot(e_i, e_j, 0) + 
-                np.tensordot(e_j, e_i, 0)), params) - psi) / EPS
-    sigma = 1/J*F.dot(S).dot(F.T)
-    return sigma
+            S[i, j] = (get_psi(C + eps_s*(np.tensordot(e_i, e_j, 0) + 
+                np.tensordot(e_j, e_i, 0)), params) - psi) / eps_s
+    tau = F.dot(S).dot(F.T)
+    sigma = tau / J
+    if output == 'Cauchy':
+        stress = sigma
+    elif output == 'Kirchoff':
+        stress = tau
+    return stress
 
 
 
-def get_stress(F, params, output='Cauchy'):
+def get_stress_theoretical(F, params, output='Cauchy', **keywords):
     """
     Calculates Cauchy stress based on model type.
     """
@@ -56,20 +50,31 @@ def get_stress(F, params, output='Cauchy'):
     return stress
 
 
-def get_C_CJ_ij(F, params, i, j, eps=EPS):
+def get_C_CJ_ij(F, params, i, j, eps_c=EPS, eps_s=EPS,
+                get_stress=get_stress_numerical_S):
+    def perturb(F, i, j, eps_c=EPS):
+        """
+        To purturb deformation gradient on its (i, j) component
+        """
+        e_i, e_j = np.eye(3)[[i, j]]
+        del_F = eps_c/2. * (np.outer(e_i, e_j).dot(F)
+            + np.outer(e_j, e_i).dot(F))
+        F_hat = F + del_F
+        return F_hat
     J = np.linalg.det(F)
-    tau = get_stress(F, params, output='Kirchoff')
-    tau_perturb = get_stress(perturb(F, i, j, eps=eps), params, 
-                             output='Kirchoff')
-    C_CJ_ij = 1. / J / eps * (tau_perturb - tau)
+    tau = get_stress(F, params, output='Kirchoff', eps_s=eps_s)
+    tau_perturb = get_stress(perturb(F, i, j, eps_c=eps_c), params, 
+                             output='Kirchoff', eps_s=eps_s)
+    C_CJ_ij = 1. / J / eps_c * (tau_perturb - tau)
     return C_CJ_ij
 
 
-def get_C_CJ_numerical(F, params, eps=EPS):
+def get_C_CJ_numerical(F, params, eps_c=EPS, eps_s=EPS):
     C_CJ_numerical = np.empty([3, 3, 3, 3])
     for i in range(3):
         for j in range(3):
-            C_CJ_numerical[:, :, i, j] = get_C_CJ_ij(F, params, i, j, eps=eps)
+            C_CJ_numerical[:, :, i, j] = get_C_CJ_ij(F, params, i, j, 
+                eps_c=eps_c, eps_s=eps_s)
     return C_CJ_numerical
 
 
@@ -103,6 +108,6 @@ if __name__ == '__main__':
     # %% Get related quantities
     params_nh = dict(G=1e5, D=.1, model='Neo-Hookean')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
-    C_CJ_numerical  = get_C_CJ_numerical(F, params_nh, eps=EPS)
+    C_CJ_numerical  = get_C_CJ_numerical(F, params_nh, eps_c=EPS)
 #    print(np.allclose(C_CJ_theoretical, C_CJ_numerical))
-    print(get_stress(F, params_nh, output='Cauchy'))
+    print(get_stress_theoretical(F, params_nh, output='Cauchy'))
