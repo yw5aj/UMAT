@@ -8,7 +8,7 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     def get_psi(C, params):
         J = np.sqrt(np.linalg.det(C))
         Cbar = J**(-2./3.) * C
-        Ibar1 = np.trace(Cbar)        
+        Ibar1 = np.trace(Cbar)   
         if params['model'] == 'Neo-Hookean':
             psi = params['G'] * (Ibar1-3.) + 1./params['D']*(J-1.)**2
         return psi
@@ -19,15 +19,19 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     for i in range(3):
         for j in range(3):
             e_i, e_j = np.eye(3)[[i, j]]
-            S[i, j] = (get_psi(C + eps_s*(np.tensordot(e_i, e_j, 0) + 
-                np.tensordot(e_j, e_i, 0)), params) - psi) / eps_s
+            psiptb = get_psi(C + eps_s*(np.tensordot(e_i, e_j, 0) + 
+                np.tensordot(e_j, e_i, 0)), params)
+            S[i, j] = (psiptb - psi) / eps_s
     tau = F.dot(S).dot(F.T)
     sigma = tau / J
     if output == 'Cauchy':
         stress = sigma
     elif output == 'Kirchoff':
         stress = tau
+    elif output == 'PK2':
+        stress = S
     return stress
+tau = get_stress_numerical(F, params_nh, eps_s=1e-4, output='Kirchoff')
 
 
 
@@ -123,3 +127,6 @@ if __name__ == '__main__':
             C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=eps_c, eps_s=eps_s)
             err[i, j] = np.abs((C_CJ_numerical_s - C_CJ_theoretical)/C_CJ_theoretical).sum()
     plt.imshow(err, vmin=0, vmax=1)
+    fortranccj = np.loadtxt('ccj.txt').reshape((3, 3, 3, 3), order='F')
+    fortrantau = np.loadtxt('tau.txt').reshape((3, 3), order='F')
+    fortranerr = np.abs((fortrandata - C_CJ_theoretical)/C_CJ_theoretical).sum()
