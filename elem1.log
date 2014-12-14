@@ -1,0 +1,27 @@
+Abaqus JOB elem1
+Abaqus 6.13-1
+Abaqus License Manager checked out the following licenses:
+Abaqus/Standard checked out 5 tokens.
+<1019 out of 1024 licenses remain available>.
+Begin Compiling Abaqus/Standard User Subroutines
+2014/12/13 18:10:26
+Intel(R) Visual Fortran Intel(R) 64 Compiler XE for applications running on Intel(R) 64, Version 12.0.5.221 Build 20110719
+Copyright (C) 1985-2011 Intel Corporation.  All rights reserved.
+
+C:\Users\ADMINI~1\AppData\Local\Temp\Administrator_elem1_6140\NeoHookeanNumeric.for(150): (col. 18) remark: getccj has been targeted for automatic cpu dispatch.
+End Compiling Abaqus/Standard User Subroutines
+Begin Linking Abaqus/Standard User Subroutines
+   Creating library standardU.lib and object standardU.exp
+End Linking Abaqus/Standard User Subroutines
+2014/12/13 18:10:26
+Begin Analysis Input File Processor
+2014/12/13 18:10:26
+Run pre.exe
+2014/12/13 18:10:38
+End Analysis Input File Processor
+Begin Abaqus/Standard Analysis
+2014/12/13 18:10:38
+Run standard.exe
+2014/12/13 18:10:52
+End Abaqus/Standard Analysis
+Abaqus JOB elem1 COMPLETED
