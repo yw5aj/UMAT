@@ -31,8 +31,6 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     elif output == 'PK2':
         stress = S
     return stress
-tau = get_stress_numerical(F, params_nh, eps_s=1e-4, output='Kirchoff')
-
 
 
 def get_stress_theoretical(F, params, output='Cauchy', **keywords):
@@ -113,20 +111,22 @@ if __name__ == '__main__':
     from constants import f as F
     # %% Get related quantities
     params_nh = dict(G=80e3, D=2e-1, model='Neo-Hookean')
+    sigma = get_stress_theoretical(F, params_nh, output='Cauchy')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
     C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=1e-8, eps_s=1e-8)
     C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=1e-6, eps_s=1e-4)
-    print(np.allclose(C_CJ_theoretical, C_CJ_numerical_s))
-    err = np.empty((13, 13))
-    for i in range(13):
-        for j in range(13):
-            eps_c = np.power(10., -1*i)
-            eps_s = np.power(10., -1*j)
-            C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
-            C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=eps_c, eps_s=eps_s)
-            C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=eps_c, eps_s=eps_s)
-            err[i, j] = np.abs((C_CJ_numerical_s - C_CJ_theoretical)/C_CJ_theoretical).sum()
-    plt.imshow(err, vmin=0, vmax=1)
-    fortranccj = np.loadtxt('ccj.txt').reshape((3, 3, 3, 3), order='F')
-    fortrantau = np.loadtxt('tau.txt').reshape((3, 3), order='F')
-    fortranerr = np.abs((fortrandata - C_CJ_theoretical)/C_CJ_theoretical).sum()
+#    print(np.allclose(C_CJ_theoretical, C_CJ_numerical_s))
+#    err = np.empty((13, 13))
+#    for i in range(13):
+#        for j in range(13):
+#            eps_c = np.power(10., -1*i)
+#            eps_s = np.power(10., -1*j)
+#            C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
+#            C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=eps_c, eps_s=eps_s)
+#            C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=eps_c, eps_s=eps_s)
+#            err[i, j] = np.abs((C_CJ_numerical_s - C_CJ_theoretical)/C_CJ_theoretical).sum()
+#    plt.imshow(err, vmin=0, vmax=1)
+#    fortranccj = np.loadtxt('ccj.txt').reshape((3, 3, 3, 3), order='F')
+#    fortrantau = np.loadtxt('tau.txt').reshape((3, 3), order='F')
+#    fortranerr = np.abs((fortrandata - C_CJ_theoretical)/C_CJ_theoretical).sum()
+

@@ -3,6 +3,7 @@
      2 stran,dstran,time,dtime,temp,dtemp,predef,dpred,cmname,
      3 ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,
      4 celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
+      implicit none
 c
       include 'aba_param.inc'
 c

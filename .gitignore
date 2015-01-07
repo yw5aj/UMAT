@@ -10,6 +10,19 @@ output
 *.rec
 *.prt
 *.sim
-*.sta
-*.dat
 *.ipm
+*.zip
+*.cae
+*.jnl
+*.mod
+*.msg
+*.dat
+*.pes
+*.pmg
+*.sta
+*.log
+*.par
+*.sml
+
+# Unnecessary text files
+*.txt

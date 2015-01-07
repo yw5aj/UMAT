@@ -14,39 +14,41 @@ c ibar1 : first invariant of rcgbar
 c tau : Kirchoff stress
 c ccj : tangent modulus for Cauchy stress in Jaumann rate
 c
-C       dfgrd1(1, 1) = 1.5488135
-C       dfgrd1(1, 2) = 0.71518937
-C       dfgrd1(1, 3) = 0.60276338
-C       dfgrd1(2, 1) = 0.54488318
-C       dfgrd1(2, 2) = 1.4236548
-C       dfgrd1(2, 3) = 0.64589411
-C       dfgrd1(3, 1) = 0.43758721
-C       dfgrd1(3, 2) = 0.891773
-C       dfgrd1(3, 3) = 1.96366276      
-      dfgrd1(1, 1) = 2.
-      dfgrd1(1, 2) = 0.
-      dfgrd1(1, 3) = 0.
-      dfgrd1(2, 1) = 0.
-      dfgrd1(2, 2) = 2.
-      dfgrd1(2, 3) = 0.
-      dfgrd1(3, 1) = 0.
-      dfgrd1(3, 2) = 0.
-      dfgrd1(3, 3) = 2.
-      c10 = 8e4
-      d1 = 2e-1
-      epss = 1e-4
-      epsc = 1e-6
+      dfgrd1(1, 1) = 1.5488135
+      dfgrd1(1, 2) = 0.71518937
+      dfgrd1(1, 3) = 0.60276338
+      dfgrd1(2, 1) = 0.54488318
+      dfgrd1(2, 2) = 1.4236548
+      dfgrd1(2, 3) = 0.64589411
+      dfgrd1(3, 1) = 0.43758721
+      dfgrd1(3, 2) = 0.891773
+      dfgrd1(3, 3) = 1.96366276      
+C       dfgrd1(1, 1) = 2.
+C       dfgrd1(1, 2) = 0.
+C       dfgrd1(1, 3) = 0.
+C       dfgrd1(2, 1) = 0.
+C       dfgrd1(2, 2) = 2.
+C       dfgrd1(2, 3) = 0.
+C       dfgrd1(3, 1) = 0.
+C       dfgrd1(3, 2) = 0.
+C       dfgrd1(3, 3) = 2.
+      c10 = 8d4
+      d1 = 2d-1
+      epss = 1d-4
+      epsc = 1d-6
 c
 c      
       call gettau(dfgrd1, c10, d1, epss, tau)
       call getccj(dfgrd1, c10, d1, epsc, epss, ccj)
 c Write to a file
-      fid = 1
-      open (fid, file='ccj.txt', status='new')
-      write (fid, *) ccj
-      fid = 2
-      open (fid, file='tau.txt', status='new')
-      write (fid, *) tau
+C       fid = 1
+C       open (fid, file='ccj.txt', status='new')
+C       write (fid, *) ccj
+C       fid = 2
+C       open (fid, file='tau.txt', status='new')
+C       write (fid, *) tau
+      write (*, *) ccj
+      write (*, *) tau
       stop
       end
 c
