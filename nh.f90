@@ -64,14 +64,9 @@ contains
         ! Outer two layers are indices for the 2nd PK stress
         do k1 = 1, 3
             do k2 = 1, 3
-                ! Inner two layers are for perturbing the rcg
-                do k3 = 1, 3
-                    do k4 = 1, 3
-                        rcgptb(k3, k4) = rcg(k3, k4)&
-                            + epss * delta(k1, k3) * delta(k2, k4)&
-                            + epss * delta(k2, k3) * delta(k1, k4)
-                    end do
-                end do
+                rcgptb = rcg + epss * (&
+                    m31tensorprod(delta(:, k1), delta(:, k2)) +&
+                    m31tensorprod(delta(:, k2), delta(:, k1)))
                 psiptb = getpsi(rcgptb, c10, d1)
                 pk2(k1, k2) = (psiptb - psi) / epss
             end do
@@ -85,26 +80,18 @@ contains
         real(dp), intent(in) :: dfgrd(3, 3), c10, d1, epsc, epss
         real(dp) :: getccj(3, 3, 3, 3)
         real(dp) :: tau(3, 3), tauptb(3, 3), fptb(3, 3), det
-        integer :: k1, k2, k3, k4
+        integer :: k3, k4
         det = m33det(dfgrd)
         tau = gettau(dfgrd, c10, d1, epss)
+        ! Use k3 & k4 rather than k1 & k2 to denote that it's the k, l 
+        ! component of the elasticity tensor being calculated
         do k3 = 1, 3
         do k4 = 1, 3
-            do k1 = 1, 3
-            do k2 = 1, 3
-                fptb(k1, k2) = dfgrd(k1, k2) + epsc / 2.d0 * (&
-                    (delta(k1,k3)*delta(1,k4)+delta(1,k3)*delta(k1,k4))*dfgrd(1,k2)&
-                    +(delta(k1,k3)*delta(2,k4)+delta(2,k3)*delta(k1,k4))*dfgrd(2,k2)&
-                    +(delta(k1,k3)*delta(3,k4)+delta(3,k3)*delta(k1,k4))*dfgrd(3,k2))
-            end do
-            end do
+            fptb = dfgrd + epsc / 2.d0 * (&
+                matmul(m31tensorprod(delta(:, k3), delta(:, k4)), dfgrd) +&
+                matmul(m31tensorprod(delta(:, k4), delta(:, k3)), dfgrd))
             tauptb = gettau(fptb, c10, d1, epss)
-            do k1 = 1, 3
-            do k2 = 1, 3
-                getccj(k1, k2, k3, k4) = 1.d0 / det / epsc * &
-                    (tauptb(k1, k2) - tau(k1, k2))
-            end do
-            end do
+            getccj(:, :, k3, k4) = 1.d0 / det / epsc * (tauptb - tau)
         end do
         end do
         return
