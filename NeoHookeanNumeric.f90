@@ -149,37 +149,32 @@ contains
 end module numeric_nh
 
 
-program nh
-    !!! Testing numerical method for NH model
+subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
+    rpl,ddsddt,drplde,drpldt,&
+    stran,dstran,time,dtime,temp,dtemp,predef,dpred,cmname,&
+    ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,&
+    celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
     use numeric_nh, only: update_stress_ddsdde
     use umatutils, only: dp
     implicit none
-    real(dp) :: d1, c10
-    integer, parameter :: ntens=6
-    real(dp) :: stress(ntens), ddsdde(ntens, ntens), dfgrd(3, 3)
-    ! Assign initial parameters
-    dfgrd(1, 1) = 1.5488135
-    dfgrd(1, 2) = 0.71518937
-    dfgrd(1, 3) = 0.60276338
-    dfgrd(2, 1) = 0.54488318
-    dfgrd(2, 2) = 1.4236548
-    dfgrd(2, 3) = 0.64589411
-    dfgrd(3, 1) = 0.43758721
-    dfgrd(3, 2) = 0.891773
-    dfgrd(3, 3) = 1.96366276    
-    ! dfgrd = reshape([1._dp, 0._dp, 0._dp, 0._dp, 1._dp, 0._dp, 0._dp, 0._dp, 1._dp], [3, 3])
-    ! dfgrd = dfgrd * 1.6d0
-    c10 = 8d4
-    d1 = 2d-1
-    ! Calculate
-    call update_stress_ddsdde(c10, d1, dfgrd, ntens, stress, ddsdde)
-    write(*, *) 'Stress: ', stress
-    
-contains
-    !!! Does not contain any subroutine / functions
-end program nh
-
-
-
-
-
+    ! This is a hack. The content of the 'aba_param.inc' is simply the
+    ! Following two lines. I commented the first one, and modified the
+    ! second one.
+    ! include 'aba_param.inc'
+    ! implicit real*8(a-h,o-z)
+    ! parameter (nprecd=2)
+    integer, parameter :: nprecd=2
+    character*80 :: cmname
+    real(dp), intent(in) :: stran(ntens),dstran(ntens),time(2),predef(1),dpred(1),&
+        props(nprops),coords(3),drot(3,3),dfgrd0(3,3),dfgrd1(3,3), dtime, temp, &
+        dtemp, celent
+    integer, intent(in) :: ndi, nshr, ntens, nstatv, nprops, noel, npt, layer,&
+        kspt, kstep, kinc
+    real(dp), intent(inout) :: stress(ntens), statev(nstatv), sse, spd, scd,&
+        rpl, ddsdde(ntens, ntens), ddsddt(ntens), drplde(ntens), drpldt, pnewdt
+    real(dp) :: c10, d1
+    ! Get material properties
+    c10 = props(1)
+    d1 = props(2)
+    call update_stress_ddsdde(c10, d1, dfgrd1, ntens, stress, ddsdde)
+end subroutine umat
