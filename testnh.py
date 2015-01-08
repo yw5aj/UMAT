@@ -110,8 +110,10 @@ def get_C_CJ_theoretical(F, params):
 if __name__ == '__main__':  
     from constants import f as F
     # %% Get related quantities
+    F = np.eye(3) * 1.6
     params_nh = dict(G=80e3, D=2e-1, model='Neo-Hookean')
-    sigma = get_stress_theoretical(F, params_nh, output='Cauchy')
+    sigma_t = get_stress_theoretical(F, params_nh, output='Cauchy')
+    sigma_n = get_stress_numerical(F, params_nh, eps_s=1e-4, output='Cauchy')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
     C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=1e-8, eps_s=1e-8)
     C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=1e-6, eps_s=1e-4)

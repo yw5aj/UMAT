@@ -23,6 +23,7 @@ output
 *.log
 *.par
 *.sml
+*.pyc
 
 # Unnecessary text files
 *.txt

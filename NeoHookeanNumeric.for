@@ -38,6 +38,9 @@ c props(2) : d1
 c ----------------------------------------------------------------
       c10=props(1)
       d1=props(2)
+c Assign the epsilon values
+      epss = 1d-4
+      epsc = 1d-6
 c First calculate stress      
       call gettau(dfgrd1, c10, d1, epss, tau)
       det = getdet(dfgrd1)
@@ -58,6 +61,7 @@ c First for stress
           stress(5) = sigma(1, 3)
           stress(6) = sigma(2, 3)
       end if
+      write (6, *) stress
 c Then for tangent modulus
       ddsdde(1, 1) = ccj(1, 1, 1, 1)
       ddsdde(2, 2) = ccj(2, 2, 2, 2)

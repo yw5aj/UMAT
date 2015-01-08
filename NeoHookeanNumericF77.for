@@ -1,10 +1,19 @@
-      program nh
-c Testing numerical evaluation for Neo-Hookean model
-      double precision det, dfgrd1(3, 3), fbar(3, 3), rcg(3, 3), 
-     1    rcgbar(3, 3), ibar1, tau(3, 3), ccj(3, 3, 3, 3),
-     2    epss, epsc, getdet, d1, c10
-      integer k1, k2, k3, k4, fid, delta
+      subroutine umat(stress,statev,ddsdde,sse,spd,scd,
+     1 rpl,ddsddt,drplde,drpldt,
+     2 stran,dstran,time,dtime,temp,dtemp,predef,dpred,cmname,
+     3 ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,
+     4 celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
 c
+      implicit real*8(a-h,o-z)
+      parameter (nprecd=2)
+c
+      character*80 cmname
+      dimension stress(ntens),statev(nstatv),
+     1 ddsdde(ntens,ntens),ddsddt(ntens),drplde(ntens),
+     2 stran(ntens),dstran(ntens),time(2),predef(1),dpred(1),
+     3 props(nprops),coords(3),drot(3,3),dfgrd0(3,3),dfgrd1(3,3)
+c    local arrays
+c ----------------------------------------------------------------
 c det : Jacobian
 c dfgrd1 : deformation gradient
 c fbar : modified deformation gradient
@@ -12,45 +21,81 @@ c rcg : right Cauchy-Green tensor
 c rcgbar : modified right Cauchy-Green tensor
 c ibar1 : first invariant of rcgbar
 c tau : Kirchoff stress
+c sigma : Cauchy stress
 c ccj : tangent modulus for Cauchy stress in Jaumann rate
+c ----------------------------------------------------------------
 c
-C       dfgrd1(1, 1) = 1.5488135
-C       dfgrd1(1, 2) = 0.71518937
-C       dfgrd1(1, 3) = 0.60276338
-C       dfgrd1(2, 1) = 0.54488318
-C       dfgrd1(2, 2) = 1.4236548
-C       dfgrd1(2, 3) = 0.64589411
-C       dfgrd1(3, 1) = 0.43758721
-C       dfgrd1(3, 2) = 0.891773
-C       dfgrd1(3, 3) = 1.96366276      
-      dfgrd1(1, 1) = 1.
-      dfgrd1(1, 2) = 0.
-      dfgrd1(1, 3) = 0.
-      dfgrd1(2, 1) = 0.
-      dfgrd1(2, 2) = 1.
-      dfgrd1(2, 3) = 0.
-      dfgrd1(3, 1) = 0.
-      dfgrd1(3, 2) = 0.
-      dfgrd1(3, 3) = 1.
-      c10 = 8d4
-      d1 = 2d-1
+      double precision det, fbar(3, 3), rcg(3, 3), 
+     1    rcgbar(3, 3), ibar1, tau(3, 3), ccj(3, 3, 3, 3),
+     2    epss, epsc, getdet, d1, c10, sigma(3, 3)
+      integer k1, k2, fid, delta
+c
+c ----------------------------------------------------------------
+c umat for compressible neo-hookean hyperelasticity
+c cannot be used for plane stress
+c ----------------------------------------------------------------
+c props(1) : c10
+c props(2) : d1
+c ----------------------------------------------------------------
+      c10=props(1)
+      d1=props(2)
+c Assign the epsilon values
       epss = 1d-4
       epsc = 1d-6
-c
-c      
+c First calculate stress      
       call gettau(dfgrd1, c10, d1, epss, tau)
-      call getccj(dfgrd1, c10, d1, epsc, epss, ccj)
-c Write to a file
-C       fid = 1
-C       open (fid, file='ccj.txt', status='new')
-C       write (fid, *) ccj
-C       fid = 2
-C       open (fid, file='tau.txt', status='new')
-C       write (fid, *) tau
-C       write (*, *) ccj
-      write (*, *) tau
-      stop
-      end
+      det = getdet(dfgrd1)
+      do k1 = 1, 3
+      do k2 = 1, 3
+          sigma(k1, k2) = tau(k1, k2) / det
+      end do
+      end do
+c Then calculate ccj
+      call getccj(dfgrd1, c10, d1, epsc, epss, ccj)      
+c Convert to abaqus format
+c First for stress
+      stress(1) = sigma(1, 1)
+      stress(2) = sigma(2, 2)
+      stress(3) = sigma(3, 3)
+      stress(4) = sigma(1, 2)
+      if (nshr.eq.3) then
+          stress(5) = sigma(1, 3)
+          stress(6) = sigma(2, 3)
+      end if
+      write (6, *) 'Stress:', stress
+      write (6, *) 'Dfgrd1:', dfgrd1
+c Then for tangent modulus
+      ddsdde(1, 1) = ccj(1, 1, 1, 1)
+      ddsdde(2, 2) = ccj(2, 2, 2, 2)
+      ddsdde(3, 3) = ccj(3, 3, 3, 3)
+      ddsdde(1, 2) = ccj(1, 1, 2, 2)
+      ddsdde(1, 3) = ccj(1, 1, 3, 3)
+      ddsdde(2, 3) = ccj(2, 2, 3, 3)
+      ddsdde(1, 4) = ccj(1, 1, 1, 2)
+      ddsdde(2, 4) = ccj(2, 2, 1, 2)
+      ddsdde(3, 4) = ccj(3, 3, 1, 2)
+      ddsdde(4, 4) = ccj(1, 2, 1, 2)
+      if (nshr.eq.3) then
+          ddsdde(1, 5) = ccj(1, 1, 1, 3)
+          ddsdde(2, 5) = ccj(2, 2, 1, 3)
+          ddsdde(3, 5) = ccj(3, 3, 1, 3)
+          ddsdde(1, 6) = ccj(1, 1, 2, 3)
+          ddsdde(2, 6) = ccj(2, 2, 2, 3)
+          ddsdde(3, 6) = ccj(3, 3, 2, 3)
+          ddsdde(5, 5) = ccj(1, 3, 1, 3)
+          ddsdde(6, 6) = ccj(2, 3, 2, 3)
+          ddsdde(4, 5) = ccj(1, 2, 1, 3)
+          ddsdde(4, 6) = ccj(1, 2, 2, 3)
+          ddsdde(5, 6) = ccj(1, 3, 2, 3)
+      end if
+      do k1 = 1, ntens
+          do k2 = 1, k1 - 1
+              ddsdde(k1, k2) = ddsdde(k2, k1)
+          end do
+      end do
+      return
+      end      
+c
 c
 c The subroutine to calculate strain energy given C
       subroutine getpsi (rcg, c10, d1, psi)
