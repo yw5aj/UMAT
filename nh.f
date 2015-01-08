@@ -12,11 +12,11 @@ module numeric_nh
     !!! ccj : tangent modulus for Cauchy stress in Jaumann rate
     implicit none
     integer, parameter :: dp=kind(1.d0)
-    integer, parameter :: notationmap(6, 2)=reshape((/1, 2, 3, 1, 1, 2, 1, 2,&
-        3, 2, 3, 3/), (/6, 2/))
-    real(dp), parameter :: delta(3, 3)=reshape((/1, 0, 0, 0, 1, 0, 0, 0, 1/),&
-        (/3, 3/))
-
+    integer, parameter :: notationmap(6, 2)=reshape([1, 2, 3, 1, 1, 2, 1, 2,&
+        3, 2, 3, 3], [6, 2])
+    real(dp), parameter :: delta(3, 3)=reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
+        [3, 3])
+        
 contains
     !!! Utility functions
     function m31tensorprod(a, b)
@@ -61,7 +61,7 @@ contains
         integer :: k1, k2
         det = (m33det(rcg))**(1.d0/2)
         rcgbar = det**(-2.d0/3) * rcg
-        ibar1 = sum((/(rcgbar(k1, k1), k1=1, 3)/))
+        ibar1 = sum([(rcgbar(k1, k1), k1=1, 3)])
         getpsi = c10 * (ibar1 - 3.d0) + 1.d0 / d1 * (det - 1.d0)**2.d0
         return
     end function getpsi
@@ -113,48 +113,50 @@ contains
 end module numeric_nh
 
 
-subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
-    rpl,ddsddt,drplde,drpldt,&
-    stran,dstran,time,dtime,temp,dtemp,predef,dpred,cmname,&
-    ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,&
-    celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
+program nh
+    !!! Testing numerical method for NH model
     use numeric_nh, only: gettau, getccj, m33det, notationmap
     implicit none
-    ! This is a hack. The content of the 'aba_param.inc' is simply the
-    ! Following two lines. I commented the first one, and modified the
-    ! second one.
-    ! include 'aba_param.inc'
-    ! implicit real*8(a-h,o-z)
-    ! parameter (nprecd=2)
-    integer, parameter :: nprecd=2
-    character*80 :: cmname
-    integer, parameter :: dp=kind(1.d0)
-    real(dp), intent(in) :: stran(ntens),dstran(ntens),time(2),predef(1),dpred(1),&
-        props(nprops),coords(3),drot(3,3),dfgrd0(3,3),dfgrd1(3,3), dtime, temp, &
-        dtemp, celent
-    integer, intent(in) :: ndi, nshr, ntens, nstatv, nprops, noel, npt, layer,&
-        kspt, kstep, kinc
-    real(dp), intent(inout) :: stress(ntens), statev(nstatv), sse, spd, scd,&
-        rpl, ddsdde(ntens, ntens), ddsddt(ntens), drplde(ntens), drpldt, pnewdt
-    real(dp) :: sigma(3, 3), ccj(3, 3, 3, 3), det, epss, epsc, c10, d1
-    integer :: k1, k2
-    ! Assign the epsilons
+    integer, parameter :: dp = kind(0.d0)
+    real(dp) :: ibar1, epss, epsc, getdet, d1, c10, det
+    real(dp), dimension(3, 3) :: dfgrd, fbar, rcg, rcgbar, tau, sigma
+    real(dp), dimension(3, 3, 3, 3) :: ccj
+    real(dp) :: stress(6), ddsdde(6, 6)
+    integer :: k1, k2, k3, k4, fid, delta
+    ! Assign initial parameters
+    ! dfgrd(1, 1) = 1.5488135
+    ! dfgrd(1, 2) = 0.71518937
+    ! dfgrd(1, 3) = 0.60276338
+    ! dfgrd(2, 1) = 0.54488318
+    ! dfgrd(2, 2) = 1.4236548
+    ! dfgrd(2, 3) = 0.64589411
+    ! dfgrd(3, 1) = 0.43758721
+    ! dfgrd(3, 2) = 0.891773
+    ! dfgrd(3, 3) = 1.96366276    
+    dfgrd = reshape([1.d0, 0.d0, 0.d0, 0.d0, 1.d0, 0.d0, 0.d0, 0.d0, 1.d0], [3, 3])
+    dfgrd = dfgrd * 1.6d0
+    c10 = 8d4
+    d1 = 2d-1
     epss = 1d-4
     epsc = 1d-6
-    ! Get material properties
-    c10 = props(1)
-    d1 = props(2)
-    ! Get the standard matrix form of Cauchy stress and tangent modulus
-    det = m33det(dfgrd1)
-    sigma = gettau(dfgrd1, c10, d1, epss) / det
-    ccj = getccj(dfgrd1, c10, d1, epsc, epss)
-    ! Fill in stress and ddsdde
-    do k1 = 1, ntens
+    ! Calculate
+    det = m33det(dfgrd)
+    tau = gettau(dfgrd, c10, d1, epss)
+    ccj = getccj(dfgrd, c10, d1, epsc, epss)
+    sigma = tau / det
+    do k1 = 1, 6
         stress(k1) = sigma(notationmap(k1, 1), notationmap(k1, 2))    
-        do k2 = 1, ntens
+        do k2 = 1, 6
             ddsdde(k1, k2) = ccj(notationmap(k1, 1), notationmap(k1, 2),&
                 notationmap(k2, 1), notationmap(k2, 2))
         end do
     end do
-    return
-    end subroutine umat
+
+contains
+    !!! Does not contain any subroutine / functions
+end program nh
+
+
+
+
+
