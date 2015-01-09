@@ -34,7 +34,7 @@ def run_umat(codename, jobname, wait=False):
 
 
 if __name__ == '__main__':
-    codename = 'NeoHookeanNumericSigma.f90'
-    jobname = 'SingleElem-Compress'
+    codename = 'NeoHookeanNumeric.f90'
+    jobname = 'SingleElem'
     run_umat(codename, jobname)
 

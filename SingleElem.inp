@@ -35,7 +35,7 @@
 *Elset, elset=Set-2
  1,
 ** Section: elem1
-*Solid Section, elset=Set-2, material=umatnhanalytic
+*Solid Section, elset=Set-2, material=umatnhnumeric
 ,
 *End Part
 **  

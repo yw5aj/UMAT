@@ -61,7 +61,8 @@ contains
 end module umatutils
 
 
-module numeric_nh
+module numerichyper
+    !!! Numeric method for hyperelastic materials
     !!! Module to be embedded in the UMAT
     !!! Paramters
     !!! ---------
@@ -72,67 +73,69 @@ module numeric_nh
     !!! rcgbar : modified right Cauchy-Green tensor
     !!! ibar1 : first invariant of rcgbar
     !!! sigma : Cauchy stress
-    !!! ccj : tangent modulus for Cauchy stress in Jaumann rate
+    !!! ccj : tangent modulus for Cauchy stress in Jaumann rate    
     use umatutils, only: dp, delta, m33det, m31tensorprod, mapnotation
     implicit none
     private
     public update_stress_ddsdde
-        
+
 contains
-    subroutine update_stress_ddsdde(c10, d1, dfgrd, ntens, stress, ddsdde)
-        !! Update the stress and ddsdde for Neo-Hookean
-        real(dp), intent(in) :: c10, d1, dfgrd(3, 3)
-        integer, intent(in) :: ntens
-        real(dp), intent(out) :: stress(ntens), ddsdde(ntens, ntens)
-        real(dp), parameter :: eps_s=1d-4, eps_c=1d-6
-        real(dp) :: sigma(3, 3), ccj(3, 3, 3, 3)
-        sigma = getsigma(dfgrd, c10, d1, eps_s)
-        ccj = getccj(dfgrd, c10, d1, eps_c, eps_s)
-        call mapnotation(sigma, ccj, ntens, stress, ddsdde)
-    end subroutine update_stress_ddsdde
-    
-    function getpsi(rcg, c10, d1) result(psi)
+    function getpsi(rcg, props) result(psi)
         !! Return strain energy density given C and material properties
-        real(dp), intent(in) :: rcg(3, 3), c10, d1
+        real(dp), intent(in) :: rcg(3, 3), props(:)
         real(dp) :: rcgbar(3, 3), det, ibar1, psi
-        integer :: k1, k2
+        real(dp) :: c10, d1 ! Specific to Neo-Hookean model
+        integer :: k1
+        c10 = props(1)
+        d1 = props(2)
         det = sqrt(m33det(rcg))
         rcgbar = det**(-2._dp/3) * rcg
         ibar1 = sum([(rcgbar(k1, k1), k1=1, 3)])
         psi = c10 * (ibar1 - 3) + (det - 1)**2 / d1
         return
     end function getpsi
+
+    subroutine update_stress_ddsdde(props, dfgrd, ntens, stress, ddsdde)
+        !! Update the stress and ddsdde for Neo-Hookean
+        real(dp), intent(in) :: props(:), dfgrd(3, 3)
+        integer, intent(in) :: ntens
+        real(dp), intent(out) :: stress(ntens), ddsdde(ntens, ntens)
+        real(dp), parameter :: eps_s=1d-4, eps_c=1d-6
+        real(dp) :: sigma(3, 3), ccj(3, 3, 3, 3)
+        call get_sigma_ccj(dfgrd, props, eps_c, eps_s, sigma, ccj)
+        call mapnotation(sigma, ccj, ntens, stress, ddsdde)
+    end subroutine update_stress_ddsdde
         
-    function getsigma(dfgrd, c10, d1, eps_s) result(sigma)
+    function gettau(dfgrd, props, eps_s) result(tau)
         !! Return the Cauchy stress given deformation gradient
-        real(dp), intent(in) :: dfgrd(3, 3), c10, d1, eps_s
-        real(dp) :: sigma(3, 3)
-        real(dp) :: det, rcg(3, 3), psi, rcgptb(3, 3), psiptb, pk2(3, 3)
-        integer :: k1, k2, k3, k4
-        det = m33det(dfgrd)
+        real(dp), intent(in) :: dfgrd(3, 3), props(:), eps_s
+        real(dp) :: tau(3, 3), rcg(3, 3), psi, rcgptb(3, 3), psiptb, pk2(3, 3)
+        integer :: k1, k2
         rcg = matmul(transpose(dfgrd), dfgrd)
-        psi = getpsi(rcg, c10, d1)
+        psi = getpsi(rcg, props)
         ! Outer two layers are indices for the 2nd PK stress
         do k1 = 1, 3
         do k2 = 1, 3
             rcgptb = rcg + eps_s * (&
                 m31tensorprod(delta(:, k1), delta(:, k2)) +&
                 m31tensorprod(delta(:, k2), delta(:, k1)))
-            psiptb = getpsi(rcgptb, c10, d1)
+            psiptb = getpsi(rcgptb, props)
             pk2(k1, k2) = (psiptb - psi) / eps_s
         end do
         end do
         ! Calculate Kirchoff stress from 2nd PK stress
-        sigma = matmul(matmul(dfgrd, pk2), transpose(dfgrd)) / det
+        tau = matmul(matmul(dfgrd, pk2), transpose(dfgrd))
         return
-        end function getsigma
+        end function gettau
 
-    function getccj(dfgrd, c10, d1, eps_c, eps_s) result(ccj)
-        real(dp), intent(in) :: dfgrd(3, 3), c10, d1, eps_c, eps_s
-        real(dp) :: ccj(3, 3, 3, 3)
-        real(dp) :: sigma(3, 3), sigmaptb(3, 3), fptb(3, 3)
+    subroutine get_sigma_ccj(dfgrd, props, eps_c, eps_s, sigma, ccj)
+        real(dp), intent(in) :: dfgrd(3, 3), props(:), eps_c, eps_s
+        real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3)
+        real(dp) :: tau(3, 3), tauptb(3, 3), fptb(3, 3), det
         integer :: k3, k4
-        sigma = getsigma(dfgrd, c10, d1, eps_s)
+        det = m33det(dfgrd)
+        tau = gettau(dfgrd, props, eps_s)
+        sigma = tau / det ! Pass out sigma
         ! Use k3 & k4 rather than k1 & k2 to denote that it's the k, l 
         ! component of the elasticity tensor being calculated
         do k3 = 1, 3
@@ -140,21 +143,20 @@ contains
             fptb = dfgrd + eps_c / 2 * (&
                 matmul(m31tensorprod(delta(:, k3), delta(:, k4)), dfgrd) +&
                 matmul(m31tensorprod(delta(:, k4), delta(:, k3)), dfgrd))
-            sigmaptb = getsigma(fptb, c10, d1, eps_s)
-            ccj(:, :, k3, k4) = (sigmaptb - sigma) / eps_c
+            tauptb = gettau(fptb, props, eps_s)
+            ccj(:, :, k3, k4) = (tauptb - tau) / eps_c / det
         end do
         end do
-        return
-        end function getccj
-end module numeric_nh
+        end subroutine get_sigma_ccj
+end module numerichyper
 
 
 program nh
     !!! Testing numerical method for NH model
-    use numeric_nh, only: update_stress_ddsdde
+    use numerichyper, only: update_stress_ddsdde
     use umatutils, only: dp
     implicit none
-    real(dp) :: d1, c10
+    real(dp) :: d1, c10, props(2)
     integer, parameter :: ntens=6
     real(dp) :: stress(ntens), ddsdde(ntens, ntens), dfgrd(3, 3)
     ! Assign initial parameters
@@ -171,8 +173,9 @@ program nh
     ! dfgrd = dfgrd * 1.6d0
     c10 = 8d4
     d1 = 2d-1
+    props = [c10, d1]
     ! Calculate
-    call update_stress_ddsdde(c10, d1, dfgrd, ntens, stress, ddsdde)
+    call update_stress_ddsdde(props, dfgrd, ntens, stress, ddsdde)
     write(*, *) 'Stress: ', stress
     
 contains
