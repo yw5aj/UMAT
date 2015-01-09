@@ -12,17 +12,16 @@ compile_fortran=['ifort',
                  '/include:%I']
 
 
-def compile_umat(code_list, objname=None):
-    if objname is None:
-        objname = 'UMAT.obj'
+def compile_umat(codename_list):
+    assert compile_fortran[0] == 'ifort', 'This code only works with IVF.'
     compile_args = copy.deepcopy(compile_fortran)
-    compile_args.extend([code_list, '/o %s'%objname])
+    compile_args.extend(codename_list)
     assert subprocess.call(compile_args) == 0, \
         'Compilation error. See the command line window for more details.'
-    return objname
+    return
 
-def run_umat(code_list, jobname, wait=False):
-    objname = compile_umat(code_list)
+def run_umat(codename_list, jobname, objname, wait=False):
+    compile_umat(codename_list)
     mdb.jobs[jobname].setValues(userSubroutine=objname)
     mdb.jobs[jobname].submit(consistencyChecking=OFF)
     if wait:
@@ -31,8 +30,10 @@ def run_umat(code_list, jobname, wait=False):
 
 
 if __name__ == '__main__':
-    code_list = ['umat_nh.f90', 'umatutils.f90', 'numerichyper.f90', 'modpsi_nh.f90']
-    jobname = 'SingleElemDummy'
-    run_umat(codelist, jobname)
+    # codename_list = ['umat.f90', 'umatutils.f90', 'numerichyper.f90', 'modpsi_nh.f90']
+    codename_list = ['NeoHookeanNumeric.f90']
+    objname = 'umat.obj'
+    jobname = 'SingleElem'
+    run_umat(codename_list, jobname, objname)
 
 
