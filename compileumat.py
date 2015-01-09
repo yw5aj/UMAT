@@ -12,20 +12,17 @@ compile_fortran=['ifort',
                  '/include:%I']
 
 
-def compile_umat(codename, objname=None):
-    for fname in os.listdir('.'):
-        if fname.endswith('.mod'):
-            os.remove(fname)
+def compile_umat(code_list, objname=None):
     if objname is None:
-        objname = codename[:codename.index('.')] + '.obj'
+        objname = 'UMAT.obj'
     compile_args = copy.deepcopy(compile_fortran)
-    compile_args.extend([codename, '/object:%s'%objname])
+    compile_args.extend([code_list, '/o %s'%objname])
     assert subprocess.call(compile_args) == 0, \
         'Compilation error. See the command line window for more details.'
     return objname
 
-def run_umat(codename, jobname, wait=False):
-    objname = compile_umat(codename)
+def run_umat(code_list, jobname, wait=False):
+    objname = compile_umat(code_list)
     mdb.jobs[jobname].setValues(userSubroutine=objname)
     mdb.jobs[jobname].submit(consistencyChecking=OFF)
     if wait:
@@ -34,7 +31,8 @@ def run_umat(codename, jobname, wait=False):
 
 
 if __name__ == '__main__':
-    codename = 'HolzapfelNumeric.f90'
-    jobname = 'SingleElemShearDummy'
-    run_umat(codename, jobname)
+    code_list = ['umat_nh.f90', 'umatutils.f90', 'numerichyper.f90', 'modpsi_nh.f90']
+    jobname = 'SingleElemDummy'
+    run_umat(codelist, jobname)
+
 
