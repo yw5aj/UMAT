@@ -2,12 +2,20 @@ module umatutils
     !!! Utility module to be used for UMATs
     implicit none
     private
-    public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation
+    public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation,&
+        rotm31
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3)=reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
         [3, 3])
         
 contains
+    subroutine rotm31(rot, m31)
+        !! Rotate a vector by matrix rot
+        real(dp), intent(in) :: rot(3, 3)
+        real(dp), intent(inout) :: m31(3)
+        m31 = matmul(rot, m31)
+    end subroutine rotm31
+    
     subroutine mapnotation(sigma, ccj, ntens, stress, ddsdde)
         !! Map the matrix notation to vector notation
         real(dp), intent(in) :: sigma(3, 3), ccj(3, 3, 3, 3)
@@ -157,7 +165,7 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
     ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,&
     celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
     use numerichyper, only: update_stress_ddsdde
-    use umatutils, only: dp
+    use umatutils, only: dp, rotm31
     implicit none
     ! This is a hack. The content of the 'aba_param.inc' is simply the
     ! Following two lines. I commented the first one, and modified the
@@ -174,7 +182,8 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
         kspt, kstep, kinc
     real(dp), intent(inout) :: stress(ntens), statev(nstatv), sse, spd, scd,&
         rpl, ddsdde(ntens, ntens), ddsddt(ntens), drplde(ntens), drpldt, pnewdt
-    real(dp) :: c10, d1
+    call rotm31(drot, statev(1:3))
+    write(6, *) statev(1:3)
     call update_stress_ddsdde(props, dfgrd1, ntens, stress, ddsdde)
 end subroutine umat
 
