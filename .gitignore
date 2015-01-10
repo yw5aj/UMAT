@@ -23,6 +23,9 @@ output
 *.par
 *.sml
 *.pyc
+*.stt
+*.res
+*.mdl
 
 # Unnecessary text files
 *.txt

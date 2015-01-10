@@ -112,7 +112,7 @@
 80000., 0.2
 *Material, name=umatnhnumeric
 *User Material, constants=2
-80000., 0.2
+3.82e-3, 1e-5, 996.6e-3, 524.6, 0.0
 *Depvar
       6,
 *Initial conditions, type=solution

@@ -30,8 +30,9 @@ def compile_umat(umatfname):
         'Compilation error. See the command line window for more details.'
     return
 
+
 def run_umat(codename_list, jobname, objname, wait=False):
-    umatfname = combine_modules(condename_list, objname)
+    umatfname = combine_modules(codename_list, objname)
     compile_umat(umatfname)
     mdb.jobs[jobname].setValues(userSubroutine=objname)
     mdb.jobs[jobname].submit(consistencyChecking=OFF)
@@ -41,9 +42,11 @@ def run_umat(codename_list, jobname, objname, wait=False):
 
 
 if __name__ == '__main__':
-    codename_list = ['umatutils.f90', 'modpsi_nh.f90',  'numerichyper.f90', 'subnumerichyper.f90']
+    # codename_list = ['umatutils.f90', 'modpsi_neo.f90',  'numerichyper.f90', 'nhinterface.f90']
+    codename_list = ['umatutils.f90', 'modpsi_hgo.f90',  'numerichyper.f90', 'nhinterface.f90']
     objname = 'umat.obj'
-    jobname = 'SingleElem'
+    # jobname = 'SingleElem'
+    jobname = 'numeric_circ_k0-laptop'
     run_umat(codename_list, jobname, objname)
 
 

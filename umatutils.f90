@@ -2,12 +2,20 @@ module umatutils
     !!! Utility module to be used for UMATs
     implicit none
     private
-    public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation
+    public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation,&
+        rotm31
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3)=reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
         [3, 3])
         
 contains
+    subroutine rotm31(rot, m31)
+        !! Rotate a vector by matrix rot
+        real(dp), intent(in) :: rot(3, 3)
+        real(dp), intent(inout) :: m31(3)
+        m31 = matmul(rot, m31)
+    end subroutine rotm31
+    
     subroutine mapnotation(sigma, ccj, ntens, stress, ddsdde)
         !! Map the matrix notation to vector notation
         real(dp), intent(in) :: sigma(3, 3), ccj(3, 3, 3, 3)
