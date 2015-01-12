@@ -1158,7 +1158,7 @@
 *parameter
  density=1.0e-4
  C10=3.82e-3
- D=1e-2
+ D=1.
  K1=996.6e-3
  K2=524.6
  Kappa=0.0
@@ -1199,11 +1199,11 @@ Simple Tension
 ** 
 ** OUTPUT REQUESTS
 ** 
-*Restart, write, number interval=10, time marks=NO
+*Restart, write, time marks=NO
 ** 
 ** FIELD OUTPUT: F-Output-1
 ** 
-*Output, field, number interval=10, variable=PRESELECT
+*Output, field, variable=PRESELECT
 ** 
 ** HISTORY OUTPUT: H-Output-1
 ** 

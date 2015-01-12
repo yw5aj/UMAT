@@ -1116,21 +1116,7 @@
 *Elset, elset=strip, internal, generate
    1,  400,    1
 ** Section: strip
-*parameter 
- Pi = 3.141592654
- gamma = 49.98
- theta1 = gamma
- c1 = cos(theta1*Pi/180)
- s1 = sin(theta1*Pi/180)
- theta2 = theta1-2*gamma
- c2 = cos(theta2*Pi/180)
- s2 = sin(theta2*Pi/180)
-*orientation,name=ori-1,local directions=2
- 1.0,0.0,0.0,0.0,1.0,0.0
- 3,0.0
- <c1>, <s1>, 0.0
- <c2>, <s2>, 0.0
-*Solid Section, elset=strip, material=IliacAdventitia, orientation=ori-1
+*Solid Section, elset=strip, material=IliacAdventitia
 1.,
 *End Instance
 **  
@@ -1160,6 +1146,8 @@
  687, 688, 689, 690, 691, 692, 693
 *Nset, nset=ysymm, instance=Part-1-1, generate
   11,  693,   11
+*Elset, elset=allelem, instance=part-1-1, generate
+ 1,  400
 *equation
  2, 
  nDriven, 1, 1, nLoad, 1, -1
@@ -1175,10 +1163,21 @@
  K2=524.6
  Kappa=0.0
 *Material, name=IliacAdventitia
-*density
- <density>
-*anisotropic hyperelastic,holzapfel, local directions=2
+*User Material, constants=2
  <C10>, <D>, <K1>, <K2>, <Kappa>
+*Depvar
+      6,
+*parameter 
+ Pi = 3.141592654
+ gamma = 49.98
+ theta1 = gamma
+ c1 = cos(theta1*Pi/180)
+ s1 = sin(theta1*Pi/180)
+ theta2 = theta1-2*gamma
+ c2 = cos(theta2*Pi/180)
+ s2 = sin(theta2*Pi/180)
+*Initial conditions, type=solution
+ allelem, <c1>, <s1>, 0.0, <c2>, <s2>, 0.0
 ** ----------------------------------------------------------------
 ** 
 ** STEP: Step-1
@@ -1195,8 +1194,7 @@ Simple Tension
  zsymm, 3, 3
  ysymm, 2, 2
  endface, 2, 3
-*Cload
- nLoad, 1, 0.5
+ endface, 1, 1, 3
 ** 
 ** OUTPUT REQUESTS
 ** 

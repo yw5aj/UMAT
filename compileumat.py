@@ -44,9 +44,12 @@ def run_umat(codename_list, jobname, objname, wait=False):
 if __name__ == '__main__':
     # codename_list = ['umatutils.f90', 'modpsi_neo.f90',  'numerichyper.f90', 'nhinterface.f90']
     codename_list = ['umatutils.f90', 'modpsi_hgo.f90',  'numerichyper.f90', 'nhinterface.f90']
+    # codename_list = ['umatutils.f90', 'modpsi_hg.f90',  'numerichyper.f90', 'nhcylinterface.f90']
     objname = 'umat.obj'
     # jobname = 'SingleElem'
-    jobname = 'numeric_circ_k0-laptop'
+    jobname = 'SingleElemShearDummy-laptop'
+    # jobname = 'numeric_circ_k0_displ'
+    # jobname = 'ArteryInflNumeric'
     run_umat(codename_list, jobname, objname)
 
 

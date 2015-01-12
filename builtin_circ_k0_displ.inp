@@ -1195,8 +1195,7 @@ Simple Tension
  zsymm, 3, 3
  ysymm, 2, 2
  endface, 2, 3
-*Cload
- nLoad, 1, 0.5
+ endface, 1, 1, 3
 ** 
 ** OUTPUT REQUESTS
 ** 

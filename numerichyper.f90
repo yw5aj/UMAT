@@ -15,21 +15,21 @@ module numerichyper
     use modpsi, only: getpsi
     implicit none
     private
-    public update_stress_ddsdde
+    public update_umat
 
 contains
-    subroutine update_stress_ddsdde(props, dfgrd, ntens, stress, ddsdde, &
+    subroutine update_umat(props, dfgrd, ntens, stress, ddsdde, &
         statev)
         !! Update the stress and ddsdde for Neo-Hookean
         real(dp), intent(in) :: props(:), dfgrd(3, 3)
         integer, intent(in) :: ntens
         real(dp), intent(out) :: stress(ntens), ddsdde(ntens, ntens)
         real(dp), intent(inout) :: statev(:)
-        real(dp), parameter :: eps_s=1d-4, eps_c=1d-6
+        real(dp), parameter :: eps_s=1d-6, eps_c=1d-4
         real(dp) :: sigma(3, 3), ccj(3, 3, 3, 3)
         call get_sigma_ccj(dfgrd, props, eps_c, eps_s, sigma, ccj, statev)
         call mapnotation(sigma, ccj, ntens, stress, ddsdde)
-    end subroutine update_stress_ddsdde
+    end subroutine update_umat
         
     function gettau(dfgrd, props, statev, eps_s) result(tau)
         !! Return the Cauchy stress given deformation gradient

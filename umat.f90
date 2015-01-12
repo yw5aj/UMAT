@@ -130,21 +130,21 @@ module numerichyper
     use modpsi, only: getpsi
     implicit none
     private
-    public update_stress_ddsdde
+    public update_umat
 
 contains
-    subroutine update_stress_ddsdde(props, dfgrd, ntens, stress, ddsdde, &
+    subroutine update_umat(props, dfgrd, ntens, stress, ddsdde, &
         statev)
         !! Update the stress and ddsdde for Neo-Hookean
         real(dp), intent(in) :: props(:), dfgrd(3, 3)
         integer, intent(in) :: ntens
         real(dp), intent(out) :: stress(ntens), ddsdde(ntens, ntens)
         real(dp), intent(inout) :: statev(:)
-        real(dp), parameter :: eps_s=1d-4, eps_c=1d-6
+        real(dp), parameter :: eps_s=1d-6, eps_c=1d-4
         real(dp) :: sigma(3, 3), ccj(3, 3, 3, 3)
         call get_sigma_ccj(dfgrd, props, eps_c, eps_s, sigma, ccj, statev)
         call mapnotation(sigma, ccj, ntens, stress, ddsdde)
-    end subroutine update_stress_ddsdde
+    end subroutine update_umat
         
     function gettau(dfgrd, props, statev, eps_s) result(tau)
         !! Return the Cauchy stress given deformation gradient
@@ -197,7 +197,7 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
     stran,dstran,time,dtime,temp,dtemp,predef,dpred,cmname,&
     ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,&
     celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
-    use numerichyper, only: update_stress_ddsdde
+    use numerichyper, only: update_umat
     use umatutils, only: dp, rotm31
     implicit none
     ! This is a hack. The content of the 'aba_param.inc' is simply the
@@ -215,13 +215,7 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
         kspt, kstep, kinc
     real(dp), intent(inout) :: stress(ntens), statev(nstatv), sse, spd, scd,&
         rpl, ddsdde(ntens, ntens), ddsddt(ntens), drplde(ntens), drpldt, pnewdt
-    real(dp) :: c10, d1
     ! Update the stress and ddsdde
-    call update_stress_ddsdde(props, dfgrd1, ntens, stress, ddsdde, statev)
-    ! Update fiber orientation if it is two families of fibers
-    if(nstatv==6) then
-        call rotm31(drot, statev(1:3))
-        call rotm31(drot, statev(4:6))
-    end if
+    call update_umat(props, dfgrd1, ntens, stress, ddsdde, statev)
 end subroutine umat
 

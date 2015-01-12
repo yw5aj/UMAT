@@ -11,6 +11,15 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
         Ibar1 = np.trace(Cbar)   
         if params['model'] == 'Neo-Hookean':
             psi = params['G'] * (Ibar1-3.) + 1./params['D']*(J-1.)**2
+        elif params['model'] == 'Holzapfel':
+            Ibar411 = params['a1'].dot(Cbar.dot(params['a1']))
+            Ibar422 = params['a2'].dot(Cbar.dot(params['a2']))
+            Ebar1 = params['Kappa']*(Ibar1-3)+(1-3*params['Kappa'])*(Ibar411-1)
+            Ebar2 = params['Kappa']*(Ibar1-3)+(1-3*params['Kappa'])*(Ibar422-1)
+            psi = params['C10']*(Ibar1-3.) + 1./params['D']*((J**2-1)\
+                /2-np.log(J)) + params['K1']/2/params['K2']*(
+                np.exp(params['K2']*(Ebar1+np.abs(Ebar1))**2/4) - 1 +
+                np.exp(params['K2']*(Ebar1+np.abs(Ebar2))**2/4) - 1)
         return psi
     J = np.linalg.det(F)
     C = np.dot(F.T, F)
@@ -115,7 +124,7 @@ if __name__ == '__main__':
     sigma_n = get_stress_numerical(F, params_nh, eps_s=1e-4, output='Cauchy')
     C_CJ_theoretical = get_C_CJ_theoretical(F, params_nh)
     C_CJ_numerical_t  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_theoretical, eps_c=1e-8, eps_s=1e-8)
-    C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=1e-6, eps_s=1e-4)
+    C_CJ_numerical_s  = get_C_CJ_numerical(F, params_nh, get_stress=get_stress_numerical, eps_c=1e-4, eps_s=1e-6)
 #    print(np.allclose(C_CJ_theoretical, C_CJ_numerical_s))
     err = np.empty((13, 13))
     for i in range(13):

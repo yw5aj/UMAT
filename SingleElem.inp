@@ -71,8 +71,10 @@
 *Hyperelastic, neo hooke
 80000., 0.2
 *Material, name=umatnhnumeric
+*Depvar
+      6,
 *User Material, constants=2
-80000., 0.2
+8000., 0.2
 ** ----------------------------------------------------------------
 ** 
 ** STEP: load
