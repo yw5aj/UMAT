@@ -98,7 +98,7 @@ contains
         ibar1 = sum([(rcgbar(i, i), i=1, 3)])
         psi_iso = c10 * (ibar1 - 3)
         ! Get isotropic volumetric response
-        psi_vol = ((det**2 - 1) / 2 - log(det)) / d1
+        psi_vol = (det - 1)**2 / d1
         ! Get anisotropic response
         ibar411 = dot_product(a1, matmul(rcgbar, a1))
         ibar422 = dot_product(a2, matmul(rcgbar, a2))
@@ -215,7 +215,26 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
         kspt, kstep, kinc
     real(dp), intent(inout) :: stress(ntens), statev(nstatv), sse, spd, scd,&
         rpl, ddsdde(ntens, ntens), ddsddt(ntens), drplde(ntens), drpldt, pnewdt
+    ! Rotate SDVs from cylindrical coordinate to cartesian
+    if((kstep==1).and.(kinc==1)) then
+        statev(1:3) = cyl2cart(statev(1:3), coords)
+        statev(4:6) = cyl2cart(statev(4:6), coords)
+    end if
     ! Update the stress and ddsdde
     call update_umat(props, dfgrd1, ntens, stress, ddsdde, statev)
+contains
+    function cyl2cart(cyl, coords) result(cart)
+        real(dp), intent(in) :: cyl(3), coords(3)
+        real(dp) :: cart(3), r, c, a, x, y, z, theta
+        r = cyl(1)
+        c = cyl(2)
+        a = cyl(3)
+        theta = atan(coords(2)/coords(1))
+        x = r * cos(theta) - c * sin(theta)
+        y = r * sin(theta) + c * cos(theta)
+        z = a
+        cart = [x, y, z]
+        return
+    end function cyl2cart
 end subroutine umat
 

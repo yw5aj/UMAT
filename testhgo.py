@@ -4,16 +4,25 @@ from scipy import linalg
 from testnh import get_stress_numerical
 
 F = np.eye(3)
-F[0, 1] = 2.5e-1
-#F[1, 1] = 1.1
-a1 = np.eye(3)[1]
-a2 = np.eye(3)[1]
+F[0, 1] = 2.5e-1*.5
+#F[1, 1] = 1.4
+#F[0, 0] = 0.5896
+#F[2, 2] = 1.2191
+#a1 = np.eye(3)[1]
+#a2 = np.eye(3)[1]
+theta = 15 * np.pi / 180
+a1 = np.array((np.cos(theta), np.sin(theta), 0))
+a2 = np.array((np.cos(-theta), np.sin(-theta), 0))
 
 C10 = 3.82e3
-D = 1e-2
+D = 1e-6
 K1 = 996.6e3
 K2 = 524.6
 Kappa = 0.0
+
+#C10 *= 1e-6
+#K1 *= 1e-6
+#D *= 1e6
 
 J = np.linalg.det(F)
 Fbar = J**(-1./3) * F
@@ -36,7 +45,8 @@ Ebar1 = Kappa * (Ibar1 - 3) + (1 - 3*Kappa) * (Ibar41 - 1)
 Ebar2 = Kappa * (Ibar1 - 3) + (1 - 3*Kappa) * (Ibar42 - 1)
 
 Psi_ani = K1 / (2*K2) * (
-    np.exp(K2 * (Ebar1)**2) + np.exp(K2 * (Ebar2)**2) - 2)
+    np.exp(K2 * (Ebar1 + np.abs(Ebar1))**2/4) + 
+    np.exp(K2 * (Ebar2 + np.abs(Ebar2))**2/4) - 2)
 Psi = Psi_iso + Psi_ani + Psi_vol
 print('Psi: ', Psi)
 
@@ -60,21 +70,22 @@ def get_sigma_vm(sigma):
 print(get_sigma_vm(sigma))
 
 # Validate PK2 with absense of the volumetric term
-assert np.isclose(J, 1), 'Following calculatation based on J=1'
-II = .5 * (np.einsum('ik, jl -> ijkl', np.eye(3), np.eye(3)) +
-           np.einsum('il, jk -> ijkl', np.eye(3), np.eye(3)))
-#psibar41 = (Ibar41-1)*K1*np.exp(K2*(Ibar41-1)**2)
-#psibar42 = (Ibar42-1)*K1*np.exp(K2*(Ibar42-1)**2)
-#S = J**(-2./3) * np.tensordot((II - 1./3 * np.tensordot(np.linalg.inv(C), C, 0
-#    )), 2*C10*np.eye(3), 2) + 2*(psibar41*np.tensordot(a1, a1, 0) + 
-#    psibar42*np.tensordot(a2, a2, 0))
-#sigma = 1/J * F.dot(S).dot(F.T)
-P = II - 1/3*np.tensordot(np.eye(3), np.eye(3), 0)
-tau_tilde = C10 * bbar + 2*K1*Ebar1*np.exp(K2*Ebar1**2) *\
-    (Kappa * bbar + (1-3*Kappa)*(np.tensordot(Fbar.dot(a1), Fbar.dot(a1), 0))) +\
-    2*K1*Ebar2*np.exp(K2*Ebar2**2) * (Kappa * bbar + 
-    (1-3*Kappa)*(np.tensordot(Fbar.dot(a2), Fbar.dot(a2), 0)))
-tau_bar = np.tensordot(P, tau_tilde, 2)
-sigma_bar = tau_bar / J
-print(sigma_bar)
-print(get_sigma_vm(sigma_bar))
+if np.isclose(J, 1, rtol=1e-2): # Following calculatation based on J=1
+    II = .5 * (np.einsum('ik, jl -> ijkl', np.eye(3), np.eye(3)) +
+               np.einsum('il, jk -> ijkl', np.eye(3), np.eye(3)))
+    #psibar41 = (Ibar41-1)*K1*np.exp(K2*(Ibar41-1)**2)
+    #psibar42 = (Ibar42-1)*K1*np.exp(K2*(Ibar42-1)**2)
+    #S = J**(-2./3) * np.tensordot((II - 1./3 * np.tensordot(np.linalg.inv(C), C, 0
+    #    )), 2*C10*np.eye(3), 2) + 2*(psibar41*np.tensordot(a1, a1, 0) + 
+    #    psibar42*np.tensordot(a2, a2, 0))
+    #sigma = 1/J * F.dot(S).dot(F.T)
+    P = II - 1/3*np.tensordot(np.eye(3), np.eye(3), 0)
+    tau_tilde = C10 * bbar + 2*K1*Ebar1*np.exp(K2*Ebar1**2) *\
+        (Kappa * bbar + (1-3*Kappa)*(np.tensordot(Fbar.dot(a1), Fbar.dot(a1), 0))) +\
+        2*K1*Ebar2*np.exp(K2*Ebar2**2) * (Kappa * bbar + 
+        (1-3*Kappa)*(np.tensordot(Fbar.dot(a2), Fbar.dot(a2), 0)))
+    tau_bar = np.tensordot(P, tau_tilde, 2)
+    sigma_bar = tau_bar / J
+    sigma_p = np.eye(3) * (J - 1/J) / D
+    print(sigma_bar+sigma_p)
+    print(get_sigma_vm(sigma_bar))

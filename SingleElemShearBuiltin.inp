@@ -19,11 +19,18 @@
  1,  8,  1
 *Elset, elset=Set-2
  1,
+*parameter
+    PI = 3.14159265358979
+    theta = 39.76
+    c1 = cos(theta*PI/180)
+    s1 = sin(theta*PI/180)
+    c2 = cos(-theta*PI/180)
+    s2 = sin(-theta*PI/180)
 *orientation,name=ori-1,local directions=2
  1.0,0.0,0.0,0.0,1.0,0.0
  3,0.0
- 0., 1., 0.0
- 0., 1., 0.0
+ <c1>, <s1>, 0.0
+ <c2>, <s2>, 0.0
 ** Section: elem1
 *Solid Section, elset=Set-2, material=hgobuiltin, orientation=ori-1
 ,
@@ -99,7 +106,7 @@
 ** 
 *Material, name=hgobuiltin
 *Anisotropic Hyperelastic, holzapfel, local direction=2
-3820.,  1e-2,996600.,  524.6,     0.
+22.12e3,  1e-6, 0.206e3,  1.465,     0.
 ** 
 ** BOUNDARY CONDITIONS
 ** 

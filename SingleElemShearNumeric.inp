@@ -94,11 +94,18 @@
 ** 
 *Material, name=hgonumeric
 *User Material, constants=5
-3820.,  1e-2, 996600.,  524.6,     0.
+22.12e3,  1e-6, 0.206e3,  1.465,     0.
 *Depvar
       6,
+*parameter
+    PI = 3.14159265358979
+    theta = 39.76
+    c1 = cos(theta*PI/180)
+    s1 = sin(theta*PI/180)
+    c2 = cos(-theta*PI/180)
+    s2 = sin(-theta*PI/180)      
 *Initial conditions, type=solution
-Set-1, 0., 1., 0., 0., 1., 0.
+Set-1, <c1>, <s1>, 0., <c2>, <s2>, 0.
 ** 
 ** BOUNDARY CONDITIONS
 ** 

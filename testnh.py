@@ -19,12 +19,13 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
             psi = params['C10']*(Ibar1-3.) + 1./params['D']*((J**2-1)\
                 /2-np.log(J)) + params['K1']/2/params['K2']*(
                 np.exp(params['K2']*(Ebar1+np.abs(Ebar1))**2/4) - 1 +
-                np.exp(params['K2']*(Ebar1+np.abs(Ebar2))**2/4) - 1)
+                np.exp(params['K2']*(Ebar2+np.abs(Ebar2))**2/4) - 1)
         return psi
     J = np.linalg.det(F)
     C = np.dot(F.T, F)
     S = np.empty((3, 3))
     psi = get_psi(C, params)
+    print(psi)
     for i in range(3):
         for j in range(3):
             e_i, e_j = np.eye(3)[[i, j]]

@@ -4,7 +4,7 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
     ndi,nshr,ntens,nstatv,props,nprops,coords,drot,pnewdt,&
     celent,dfgrd0,dfgrd1,noel,npt,layer,kspt,kstep,kinc)
     use numerichyper, only: update_umat
-    use umatutils, only: dp, rotm31
+    use umatutils, only: dp
     implicit none
     ! This is a hack. The content of the 'aba_param.inc' is simply the
     ! Following two lines. I commented the first one, and modified the
