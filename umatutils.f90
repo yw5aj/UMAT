@@ -2,19 +2,108 @@ module umatutils
     !!! Utility module to be used for UMATs
     implicit none
     private
-    public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation,&
-        rotm31
+    public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation, pi,&
+        eps, m33eigval, m33eigvect
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3)=reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
-        [3, 3])
+        [3, 3]), eps=1e-8_dp, pi=4*atan(1._dp)
         
 contains
-    subroutine rotm31(rot, m31)
-        !! Rotate a vector by matrix rot
-        real(dp), intent(in) :: rot(3, 3)
-        real(dp), intent(inout) :: m31(3)
-        m31 = matmul(rot, m31)
-    end subroutine rotm31
+    function m33eigval(a) result(eigval)
+        !! Returns the eigenvalues of a 3x3 real symmetric matrix
+        !! Unless lambda1 = lambda2 = lambda3, lambda1 > lambda2
+        real(dp), intent(in) :: a(3, 3)
+        real(dp) :: c2, c1, c0, p, q, phi, x(3), eigval(3)
+        integer :: i
+        c2 = -a(1, 1) - a(2, 2) - a(3, 3)
+        c1 = a(1, 1) * a(2, 2) + a(1, 1) * a(3, 3) + a(2, 2) * a(3, 3)&
+            -a(1, 2)**2 - a(1, 3)**2 - a(2, 3)**2
+        c0 = a(1, 1) * a(2, 3)**2 + a(2, 2) * a(1, 3)**2 + a(3, 3)*a(1, 2)**2&
+            - a(1, 1) * a(2, 2) * a(3, 3) - 2 * a(1, 3) * a(1, 2) * a(2, 3)
+        p = c2**2 - 3 * c1
+        q = -27._dp / 2 * c0 - c2**3 + 9._dp / 2 * c2 * c1
+        ! Extreme case is p=q=0, where x(1)=x(2)=x(3)=tr(a)/3
+        if((abs(p) < eps) .and. (abs(q) < eps)) then
+            eigval = [(-c2/3, i=1, 3)]
+        else
+            phi = 1._dp / 3 * atan(sqrt(p**3 - q**2) / q)
+            ! Note that phi (-pi/6, pi/6), so x(1)=2*cos(phi) > 0 and
+            ! x(2) = 2*cos(phi+2*pi/3) <0, so x(2) /= x(1), but x(2) may be 
+            ! equal to x(3) since x(3) = 2*cos(phi-2*pi/3)
+            x(1) = 2 * cos(phi)
+            x(2) = 2 * cos(phi + 2*pi/3)
+            x(3) = 2 * cos(phi - 2*pi/3)
+            eigval = (sqrt(p) * x - c2) / 3
+        end if
+        return
+    end function m33eigval
+    
+    function m31cross(a, b) result(c)
+        !! Computes the cross product between two 3x1 vectors
+        real(dp), intent(in) :: a(3), b(3)
+        real(dp) :: c(3)
+        c(1) = a(2) * b(3) - a(3) * b(2)
+        c(2) = a(3) * b(1) - a(1) * b(3)
+        c(3) = a(1) * b(2) - a(2) * b(1)
+        return
+    end function m31cross
+    
+    function m31colinear(a, b) result(mu)
+        !! If a and b are colinear, mu = |a|/|b|; otherwise 0
+        real(dp), intent(in) :: a(3), b(3)
+        real(dp) :: det, mu
+        det = a(1) * b(2) - a(2) * b(1)
+        if(abs(det) < eps) then
+            mu = norm2(a) / norm2(b)
+        else
+            mu = 0
+        end if
+        return
+    end function m31colinear
+    
+    subroutine m33eigvect(a, eigval, eigvect)
+        !! Computes the eigenvalues and eigenvectors for real symmetric 3x3
+        !! matrix a. Eigenvectors are normalized to unit length.
+        real(dp), intent(in) :: a(3, 3)
+        real(dp), intent(out) :: eigval(3), eigvect(3, 3)
+        real(dp) :: mu, cross1(3), cross2(3)
+        integer :: i
+        eigval = m33eigval(a)
+        ! Get the 1st and 2nd eigenvector, assume x1 /= x2
+        ! Deal with x1=x2(=x3) and the end of first loop
+        do i = 1, 2
+            ! Construct the 1st and 2nd column to do cross product
+            ! Deal with x1=x2(=x3), for i == 2 only
+            if((abs(eigval(1) - eigval(2)) < eps) .and. (i == 2)) then
+                cross1 = eigvect(:, 1)
+            else
+                cross1 = a(:, 1) - eigval(i) * delta(:, 1)
+            end if
+            cross2 = a(:, 2) - eigval(i) * delta(:, 2)
+            ! If cross1 is zero, then [1, 0, 0] is eigvect, similar for cross2
+            ! Doesn't matter if both cross1 and cross2 are zero, that means
+            ! x(2) is a degenerate eigenvalue, but x(1) is not ... ?
+            if(norm2(cross1) < eps) then
+                eigvect(:, i) = [1, 0, 0]
+            elseif(norm2(cross2) < eps) then
+                eigvect(:, i) = [0, 1, 0]
+            else
+                mu = m31colinear(cross1, cross2)
+                if(mu == 0._dp) then
+                    eigvect(:, i) = m31cross(cross1, cross2)
+                else
+                    ! Will be normalized at the end
+                    eigvect(:, i) = [1._dp, -mu, 0._dp]
+                end if
+            end if
+        end do
+        ! Get the 3rd eigenvector
+        eigvect(:, 3) = m31cross(eigvect(:, 1), eigvect(:, 2))
+        ! Normalize all
+        do i = 1, 3
+            eigvect(:, i) = eigvect(:, i) / norm2(eigvect(:, i))
+        end do
+    end subroutine m33eigvect
     
     subroutine mapnotation(sigma, ccj, ntens, stress, ddsdde)
         !! Map the matrix notation to vector notation

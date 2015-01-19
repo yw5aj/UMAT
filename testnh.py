@@ -25,7 +25,6 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     C = np.dot(F.T, F)
     S = np.empty((3, 3))
     psi = get_psi(C, params)
-    print(psi)
     for i in range(3):
         for j in range(3):
             e_i, e_j = np.eye(3)[[i, j]]
