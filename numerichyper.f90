@@ -62,7 +62,7 @@ contains
         det = m33det(dfgrd)
         tau = gettau(dfgrd, props, statev, eps_s)
         sigma = tau / det ! Pass out sigma
-        ! Use k3 & k4 rather than k1 & k2 to denote that it's the k, l 
+        ! Use k3 & k4 rather than k1 & k2 to denote that it's the i, j 
         ! component of the elasticity tensor being calculated
         do k3 = 1, 3
         do k4 = 1, 3
