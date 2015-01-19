@@ -6,6 +6,9 @@ program testf90
     do i = 1, 3
         do j = 1, i
             write(*, *) i, j
+            if(i /= j) then
+                write(*, *) j, i
+            end if
         end do
     end do
 

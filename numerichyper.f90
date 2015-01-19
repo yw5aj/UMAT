@@ -39,14 +39,19 @@ contains
         rcg = matmul(transpose(dfgrd), dfgrd)
         psi = getpsi(rcg, props, statev)
         ! Outer two layers are indices for the 2nd PK stress
+        ! Only calculate the symmetric part
         do k1 = 1, 3
-        do k2 = 1, 3
-            rcgptb = rcg + eps_s * (&
-                m31tensorprod(delta(:, k1), delta(:, k2)) +&
-                m31tensorprod(delta(:, k2), delta(:, k1)))
-            psiptb = getpsi(rcgptb, props, statev)
-            pk2(k1, k2) = (psiptb - psi) / eps_s
-        end do
+            do k2 = 1, k1
+                rcgptb = rcg + eps_s * (&
+                    m31tensorprod(delta(:, k1), delta(:, k2)) +&
+                    m31tensorprod(delta(:, k2), delta(:, k1)))
+                psiptb = getpsi(rcgptb, props, statev)
+                pk2(k1, k2) = (psiptb - psi) / eps_s
+                ! Fill the other part from symmetry
+                if(k1 /= k2) then
+                    pk2(k2, k1) = pk2(k1, k2)
+                end if
+            end do
         end do
         ! Calculate Kirchoff stress from 2nd PK stress
         tau = matmul(matmul(dfgrd, pk2), transpose(dfgrd))
@@ -64,13 +69,18 @@ contains
         sigma = tau / det ! Pass out sigma
         ! Use k3 & k4 rather than k1 & k2 to denote that it's the i, j 
         ! component of the elasticity tensor being calculated
+        ! Only calculate the symmetric part
         do k3 = 1, 3
-        do k4 = 1, 3
+        do k4 = 1, k3
             fptb = dfgrd + eps_c / 2 * (&
                 matmul(m31tensorprod(delta(:, k3), delta(:, k4)), dfgrd) +&
                 matmul(m31tensorprod(delta(:, k4), delta(:, k3)), dfgrd))
             tauptb = gettau(fptb, props, statev, eps_s)
             ccj(:, :, k3, k4) = (tauptb - tau) / eps_c / det
+            ! Fill the other part from symmetry
+            if(k3 /= k4) then
+                ccj(:, :, k4, k3) = ccj(:, :, k3, k4)
+            end if
         end do
         end do
         end subroutine get_sigma_ccj
