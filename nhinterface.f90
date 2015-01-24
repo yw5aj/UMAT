@@ -23,7 +23,4 @@ subroutine umat(stress,statev,ddsdde,sse,spd,scd,&
         rpl, ddsdde(ntens, ntens), ddsddt(ntens), drplde(ntens), drpldt, pnewdt
     ! Update the stress and ddsdde
     call update_umat(props, dfgrd1, ntens, stress, ddsdde, statev)
-    if(kinc == 20) then
-        write(6, *) dfgrd1
-    end if
 end subroutine umat
