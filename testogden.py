@@ -140,29 +140,6 @@ def get_ogden_modulus_paper(f, ogden_param):
                 gamma[i][j] = np.sum([mu * alpha * (1. / 3 * lambdabar[i] ** alpha +
                                                     1. / 9. * (lambdabar ** alpha).sum())
                                       for mu, alpha in ogden_param])
-    for a in range(3):
-        dmdg[a] = np.zeros((3, 3, 3, 3))
-        for i in range(3):
-            for j in range(3):
-                for k in range(3):
-                    for l in range(3):
-                        dmdg[a][i, j, k, l] = \
-                            1 / d[a] * (1 / 2 * (
-                                b[i, k] * b[j, l] + b[i, l] * b[j, k])
-                                - b[i, j] * b[k, l] + det ** 2 * lambda_[a] **
-                                (-2) * (
-                                np.eye(3)[i, j] * np.eye(3)[k, l] - 0.5
-                                * (np.eye(3)[i, k] * np.eye(3)[j, l]) - 0.5
-                                * (np.eye(3)[i, l] * np.eye(3)[j, k])) +
-                                lambda_[a] ** 2 * (b[i, j] * bna.T[a][k]
-                                                   * bna.T[a, l] + bna.T[a][i]
-                                                   * bna.T[a][j] * b[k, l])
-                                - 1 / 2 * dprime[a] * lambda_[a] * bna.T[a][i]
-                                * bna.T[a][j] * bna.T[a][k] * bna.T[a][l] - det
-                                ** 2 * lambda_[a] ** (-2) * (
-                                    np.eye(3)[i, j] * bna.T[a][k] * bna.T[a][l]
-                                    + bna.T[a][i] * bna.T[a][j] *
-                                    np.eye(3)[k, l]))
     c_sigma_c = np.zeros((3, 3, 3, 3))
     for i in range(3):
         c_sigma_c += 2 / det * beta[i] * dmdg[i]
