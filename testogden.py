@@ -9,6 +9,8 @@ Created on Mon Dec  1 20:36:10 2014
 import numpy as np
 from scipy import linalg
 
+delta = np.eye(3)
+
 
 def get_ogden_modulus_from_ref(f, ogden_param):
     """
@@ -29,15 +31,17 @@ def get_ogden_modulus_from_ref(f, ogden_param):
                 for mu, alpha in ogden_param:
                     sc_sigma_c += lambda_[a] ** (-2) * lambda_[b] ** (-2) \
                         * mu * alpha * (-1 / 3 * lambdabar[a] ** alpha
-                                        - 1 / 3 * lambdabar[b] ** alpha + 1 / 9 *
-                                        (lambdabar ** alpha).sum()) * (
+                                        - 1 / 3 * lambdabar[b] ** alpha + 1 / 9
+                                        * (lambdabar ** alpha).sum()) * (
                         np.einsum('i, j, k, l -> ijkl', cna.T[a], cna.T[a],
                                   cna.T[b], cna.T[b]))
                 # Second term
                 for mu, alpha in ogden_param:
-                    sc_sigma_c += (mu / lambda_[b] ** 2 * (lambdabar[b] ** alpha -
-                                                           (lambdabar ** alpha).mean()) - mu / lambda_[a] ** 2 * (
-                        lambdabar[a] ** alpha - (lambdabar ** alpha).mean())) /\
+                    sc_sigma_c += (mu / lambda_[b] ** 2 * (
+                        lambdabar[b] ** alpha - (lambdabar ** alpha).mean())
+                        - mu / lambda_[a] ** 2 * (
+                            lambdabar[a] ** alpha - (lambdabar ** alpha).mean()
+                            )) /\
                         (lambda_[b] ** 2 - lambda_[a] ** 2) * (
                         np.einsum('i, j, k, l -> ijkl', cna.T[a], cna.T[b],
                                   cna.T[a], cna.T[b]) +
@@ -48,9 +52,10 @@ def get_ogden_modulus_from_ref(f, ogden_param):
                 for mu, alpha in ogden_param:
                     sc_sigma_c += lambda_[a] ** (-2) * lambda_[b] ** (-2) \
                         * mu * alpha * (1 / 3 * lambdabar[a] ** alpha
-                                        + 1 / 9 * (lambdabar ** alpha).sum()) * (
-                        np.einsum('i, j, k, l -> ijkl', cna.T[a], cna.T[a],
-                                  cna.T[b], cna.T[b]))
+                                        + 1 / 9 * (lambdabar ** alpha).sum())\
+                        * (np.einsum('i, j, k, l -> ijkl',
+                                     cna.T[a], cna.T[a],
+                                     cna.T[b], cna.T[b]))
     c_sigma_c = 1. / det * np.einsum('iI,jJ,kK,lL,IJKL -> ijkl',
                                      f, f, f, f, sc_sigma_c)
     return c_sigma_c
@@ -107,8 +112,8 @@ def get_ogden_modulus_paper(f, ogden_param):
     i1 = deformation_dict['i1']
     b = deformation_dict['b']
     i3 = det ** 2
-    ii = .5 * (np.einsum('ik, jl', np.eye(3), np.eye(3)) +
-               np.einsum('il, jk', np.eye(3), np.eye(3)))
+    ii = .5 * (np.einsum('ik, jl', delta, delta) +
+               np.einsum('il, jk', delta, delta))
     # Calculate beta, gamma and m
     m = [[] for i in range(3)]
     d = [[] for i in range(3)]
@@ -119,27 +124,34 @@ def get_ogden_modulus_paper(f, ogden_param):
     ib = .5 * (np.einsum('ac, bd', b, b) + np.einsum('ad, bc', b, b))
     for i in range(3):
         m[i] = np.tensordot(bna.T[i], bna.T[i], 0)
-        beta[i] = np.sum([mu * (lambdabar[i] ** alpha - (lambdabar ** alpha).mean())
-                          for mu, alpha in ogden_param])
+        beta[i] = np.sum(
+            [mu * (lambdabar[i] ** alpha - (lambdabar ** alpha).mean())
+             for mu, alpha in ogden_param])
         d[i] = 2 * lambda_[i] ** 4 - i1 * \
             lambda_[i] ** 2 + i3 * lambda_[i] ** (-2)
         dprime[i] = 8 * lambda_[i] ** 3 - 2 * i1 * \
             lambda_[i] - 2 * i3 * lambda_[i] ** (-3)
-#        dmdg[i] = 1 / d[i] * (ib - np.tensordot(b, b, 0) + i3 * lambda_[i] ** (-2) * (
-#            np.tensordot(np.eye(3), np.eye(3), 0) - ii))\
-#            + 1 / d[i] * (lambda_[i] ** 2 * (np.tensordot(b, m[i], 0) + np.tensordot(
-#                m[i], b, 0)) - 1 / 2 * dprime[i] * lambda_[i] * np.tensordot(m[i], m[i], 0))\
-#            - 1 / d[i] * (i3 * lambda_[i] ** (-2) * (np.tensordot(np.eye(3), m[i], 0) +
-#                                                     np.tensordot(m[i], np.eye(3), 0)))
+        dmdg[i] = 1 / d[i] * (
+            ib - np.tensordot(b, b, 0) + i3 * lambda_[i] ** (-2) * (
+                np.tensordot(delta, delta, 0) - ii))\
+            + 1 / d[i] * (lambda_[i] ** 2 * (np.tensordot(b, m[i], 0) +
+                          np.tensordot(m[i], b, 0)) -
+                          1 / 2 * dprime[i] * lambda_[i] *
+                          np.tensordot(m[i], m[i], 0))\
+            - 1 / d[i] * (i3 * lambda_[i] ** (-2) * (
+                np.tensordot(delta, m[i], 0) + np.tensordot(m[i], delta, 0)))
         for j in range(3):
             if not i == j:
-                gamma[i][j] = np.sum([mu * alpha * (-1. / 3 * lambdabar[i] ** alpha -
-                                                    -1. / 3 * lambdabar[j] ** alpha + 1. / 9. * (lambdabar ** alpha).sum())
-                                      for mu, alpha in ogden_param])
+                gamma[i][j] = np.sum(
+                    [mu * alpha * (-1. / 3 * lambdabar[i] ** alpha -
+                     1. / 3 * lambdabar[j] ** alpha
+                     + 1. / 9. * (lambdabar ** alpha).sum())
+                     for mu, alpha in ogden_param])
             elif i == j:
-                gamma[i][j] = np.sum([mu * alpha * (1. / 3 * lambdabar[i] ** alpha +
-                                                    1. / 9. * (lambdabar ** alpha).sum())
-                                      for mu, alpha in ogden_param])
+                gamma[i][j] = np.sum([
+                    mu * alpha * (1. / 3 * lambdabar[i] ** alpha +
+                                  1. / 9. * (lambdabar ** alpha).sum())
+                    for mu, alpha in ogden_param])
     c_sigma_c = np.zeros((3, 3, 3, 3))
     for i in range(3):
         c_sigma_c += 2 / det * beta[i] * dmdg[i]
@@ -158,20 +170,20 @@ def get_modulus(f, ogden_param, d_1, get_ogden_modulus, rate='Jaumann', stress='
     c_sigma_c = c_sigma_c_iso + c_sigma_c_vol
     # Return results
     sigma = get_stress(f, ogden_param, d_1, stress='Cauchy')
-    c_sigma_j = c_sigma_c + 0.5 * (np.einsum('ik, jl', np.eye(3), sigma) +
-                                   np.einsum('jk, il', np.eye(3), sigma) + np.einsum('il, jk', np.eye(3),
-                                                                                     sigma) + np.einsum('jl, ik', np.eye(3), sigma))
+    c_sigma_j = c_sigma_c + 0.5 * (np.einsum('ik, jl', delta, sigma) +
+                                   np.einsum('jk, il', delta, sigma) + np.einsum('il, jk', delta,
+                                                                                 sigma) + np.einsum('jl, ik', delta, sigma))
     return c_sigma_j
 
 
 def get_vol_modulus(det, d_1, stress='Cauchy', rate='Jaumann'):
-    c_tau_j = 2. * det * (2 * det - 1.) / d_1 * np.einsum('ij, kl', np.eye(3),
-                                                          np.eye(3))
+    c_tau_j = 2. * det * (2 * det - 1.) / d_1 * np.einsum('ij, kl', delta,
+                                                          delta)
     c_sigma_j = c_tau_j / det
     sigma = get_vol_stress(det, d_1)
-    c_sigma_c = c_sigma_j - 0.5 * (np.einsum('ik, jl', np.eye(3), sigma) +
-                                   np.einsum('jk, il', np.eye(3), sigma) + np.einsum('il, jk', np.eye(3),
-                                                                                     sigma) + np.einsum('jl, ik', np.eye(3), sigma))
+    c_sigma_c = c_sigma_j - 0.5 * (np.einsum('ik, jl', delta, sigma) +
+                                   np.einsum('jk, il', delta, sigma) + np.einsum('il, jk', delta,
+                                                                                 sigma) + np.einsum('jl, ik', delta, sigma))
     if stress == 'Cauchy' and rate == 'Jaumann':
         tangent = c_sigma_j
     elif stress == 'Kirchoff' and rate == 'Jaumann':
@@ -187,11 +199,11 @@ def get_neohookean_modulus(f, nh_param):
     bbar = j ** (-2 / 3) * b
     c10 = nh_param[0]
     ccc_iso = 2 * c10 / j * (1 / 3 * np.trace(bbar) * (
-        np.einsum('ik, jl', np.eye(3), np.eye(3)) +
-        np.einsum('il, jk', np.eye(3), np.eye(3)) + 2 / 3 *
-        np.einsum('ij, kl', np.eye(3), np.eye(3))) - 2 / 3 * (
-        np.einsum('ij, kl', np.eye(3), bbar) +
-        np.einsum('ij, kl', bbar, np.eye(3))))
+        np.einsum('ik, jl', delta, delta) +
+        np.einsum('il, jk', delta, delta) + 2 / 3 *
+        np.einsum('ij, kl', delta, delta)) - 2 / 3 * (
+        np.einsum('ij, kl', delta, bbar) +
+        np.einsum('ij, kl', bbar, delta)))
     return ccc_iso
 
 
@@ -226,8 +238,9 @@ def get_ogden_stress(f, ogden_param, stress='Cauchy'):
         for mu, alpha in ogden_param:
             lambda_i = lambda_[i]
             cna_i = cna.T[i]
-            pk2 += 1. / lambda_i ** 2 * mu * (lambdabar_i ** alpha -
-                                              np.mean(lambdabar ** alpha)) * np.tensordot(cna_i, cna_i, 0)
+            pk2 += 1. / lambda_i ** 2 * mu * (
+                lambdabar_i ** alpha - np.mean(lambdabar ** alpha)
+                ) * np.tensordot(cna_i, cna_i, 0)
     # Generate output
     sigma = det ** (-1) * f.dot(pk2).dot(f.T)
     if stress == 'Cauchy':
@@ -241,7 +254,7 @@ def get_vol_stress(det, d_1):
     """
     Only Cauchy stress implemented.
     """
-    sigma = 2. / d_1 * (det - 1.) * np.eye(3)
+    sigma = 2. / d_1 * (det - 1.) * delta
     return sigma
 
 
@@ -255,14 +268,33 @@ def get_deformation(f):
     lambda_, cna = np.linalg.eig(u)
     fbar = det ** (-1 / 3) * f
     cbar = fbar.T.dot(fbar)
+    bbar = fbar.dot(fbar.T)
     ibar1 = np.trace(cbar)
     ubar = linalg.sqrtm(cbar)
     lambdabar, _ = np.linalg.eig(ubar)
     return locals()
 
 
+def get_symmetric_part(a):
+    map_sym = np.array([[1, 4, 5], [4, 2, 6], [5, 6, 3]]) - 1
+    if a.ndim == 2:
+        a_sym = np.empty(6)
+        for i in range(3):
+            for j in range(3):
+                a_sym[map_sym[i, j]] = a[i, j]
+    elif a.ndim == 4:
+        a_sym = np.empty((6, 6))
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    for l in range(3):
+                        a_sym[map_sym[i, j], map_sym[k, l]] = a[i, j, k, l]
+    return a_sym
+
+
 if __name__ == '__main__':
-    from constants import f
+#    from constants import f
+    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
     mu_array, alpha_array = np.array([160e3]), np.array([2.])
     ogden_param = np.c_[mu_array, alpha_array]
     nh_param = np.array((80e3, .2))
@@ -273,9 +305,23 @@ if __name__ == '__main__':
     sigma_vol = get_vol_stress(det, d_1)
     sigma = sigma_iso + sigma_vol
     c_sigma_j1 = get_modulus(
-        f, ogden_param, d_1, get_ogden_modulus_holzapfel, rate='Jaumann', stress='Cauchy')
+        f, ogden_param, d_1, get_ogden_modulus_holzapfel, rate='Jaumann',
+        stress='Cauchy')
     c_sigma_j2 = get_modulus(
-        f, ogden_param, d_1, get_ogden_modulus_paper, rate='Jaumann', stress='Cauchy')
+        f, ogden_param, d_1, get_ogden_modulus_paper, rate='Jaumann',
+        stress='Cauchy')
     ccc_iso_holzapfel = get_ogden_modulus_holzapfel(f, ogden_param)
     ccc_iso_paper = get_ogden_modulus_paper(f, ogden_param)
     ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
+#    import subprocess
+#    import os
+#    os.chdir('X:/WorkFolder/DataAnalysis/Learn/FEBio/LearnFebioPlugin/' +
+#             'OgdenPI/Example')
+#    febio_args = ['febio2', '-i', 'singleelem.feb', '-cnf', 'febio.xml']
+#    output = subprocess.check_output(febio_args)
+#    output_str = str(output)
+#    start_idx = len(output_str) - output_str[::-1].index(
+#        'Marker\\r\\n'[::-1])
+#    length = output_str[start_idx:].index('\\r\\n')
+#    var_str = output_str[start_idx:start_idx + length]
+#    var = np.fromstring(var_str.replace('\\t', '\t'), sep='\t')
