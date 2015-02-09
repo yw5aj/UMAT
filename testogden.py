@@ -313,15 +313,3 @@ if __name__ == '__main__':
     ccc_iso_holzapfel = get_ogden_modulus_holzapfel(f, ogden_param)
     ccc_iso_paper = get_ogden_modulus_paper(f, ogden_param)
     ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
-#    import subprocess
-#    import os
-#    os.chdir('X:/WorkFolder/DataAnalysis/Learn/FEBio/LearnFebioPlugin/' +
-#             'OgdenPI/Example')
-#    febio_args = ['febio2', '-i', 'singleelem.feb', '-cnf', 'febio.xml']
-#    output = subprocess.check_output(febio_args)
-#    output_str = str(output)
-#    start_idx = len(output_str) - output_str[::-1].index(
-#        'Marker\\r\\n'[::-1])
-#    length = output_str[start_idx:].index('\\r\\n')
-#    var_str = output_str[start_idx:start_idx + length]
-#    var = np.fromstring(var_str.replace('\\t', '\t'), sep='\t')
