@@ -264,14 +264,15 @@ def get_deformation(f):
     i1 = np.trace(c)
     b = f.dot(f.T)
     u = linalg.sqrtm(c)
-    _, bna = np.linalg.eig(b)
+    r = f.dot(np.linalg.inv(u))
     lambda_, cna = np.linalg.eig(u)
+    bna = r.dot(cna)
     fbar = det ** (-1 / 3) * f
     cbar = fbar.T.dot(fbar)
     bbar = fbar.dot(fbar.T)
     ibar1 = np.trace(cbar)
     ubar = linalg.sqrtm(cbar)
-    lambdabar, _ = np.linalg.eig(ubar)
+    lambdabar = lambda_ * det**(-1/3)
     return locals()
 
 
@@ -293,8 +294,8 @@ def get_symmetric_part(a):
 
 
 if __name__ == '__main__':
-#    from constants import f
-    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
+    from constants import f
+#    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
     mu_array, alpha_array = np.array([160e3]), np.array([2.])
     ogden_param = np.c_[mu_array, alpha_array]
     nh_param = np.array((80e3, .2))
