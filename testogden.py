@@ -295,7 +295,7 @@ def get_symmetric_part(a):
 
 if __name__ == '__main__':
     from constants import f
-#    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
+    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
     mu_array, alpha_array = np.array([160e3]), np.array([2.])
     ogden_param = np.c_[mu_array, alpha_array]
     nh_param = np.array((80e3, .2))
