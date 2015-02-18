@@ -14,8 +14,8 @@ contains
         integer :: i, j, k, l, n
         real(dp) :: mu(nterms), alpha(nterms), b(3, 3), lam2(3), lambar(3),&
             lbpow(3, nterms), det, lam(3), beta(3), gamma(3, 3), m(3, 3, 3),&
-            d(3), dprime(3), i1, i3, ii(3, 3, 3, 3), ib(3, 3, 3, 3),&
-            dm(3, 3, 3, 3, 3), dmterm1, dmterm2, dmterm3
+            d(3), dprime(3), i1, i3, ib(3, 3, 3, 3), dmterm1, dmterm2, dmterm3,&
+            dm(3, 3, 3, 3, 3)
         mu = props(1::2)
         alpha = props(2::2)
         det = m33det(f)

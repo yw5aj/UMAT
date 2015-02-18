@@ -7,16 +7,16 @@ module umatutils
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3) = reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
         [3, 3]), eps = 1e-8_dp, pi = 4*atan(1._dp), ii(3, 3, 3, 3) = reshape([&
-            1._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
-            0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
-            0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp,&
-            0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
-            0._dp, 0._dp, 0._dp, 0._dp, 1._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
-            0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp,&
-            0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp,&
-            0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp,&
-            0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 1._dp],&
-            [3, 3, 3, 3])
+        1._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
+        0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
+        0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp,&
+        0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
+        0._dp, 0._dp, 0._dp, 0._dp, 1._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
+        0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp,&
+        0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp,&
+        0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp,&
+        0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 1._dp],&
+        [3, 3, 3, 3])
         
 contains
     function m33eigval(a) result(eigval)
