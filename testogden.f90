@@ -10,7 +10,7 @@ contains
     subroutine hyperiso(f, props, nterms, sigma, ccj)
         integer, intent(in) :: nterms
         real(dp), intent(in) :: f(3, 3), props(:)
-        real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3)
+        real(dp), intent(out) :: sigma(3, 3), ccc(3, 3, 3, 3)
         integer :: i, j, k, l, n
         real(dp) :: mu(nterms), alpha(nterms), b(3, 3), lam2(3), lambar(3),&
             lbpow(3, nterms), det, lam(3), beta(3), gamma(3, 3), m(3, 3, 3),&
@@ -105,8 +105,23 @@ contains
                 end if
             end do
         end do
-        
+        ! Put everything together, for three distinct cases
+        sigma = reshape([0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3])
+        ccc = reshape([&
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,&
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,&
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,&
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,&
+            0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 3, 3])
+        ! If all three principal stretches are different
+        if ((lam(1) - lam(2) > eps) .and. (lam(1) - lam(3) > eps)) then
+            do i = 1, 3
+                do j = i, 3
+                    sigma(i, j) = sigma(i, j) + beta
+                end do
+            end do
+        end if
         ! Output for testing
-        write (*, *) dm(:, :, :, :, 1)
+        write (*, *) mod(5, 3)
     end subroutine hyperiso
 end program testogden
