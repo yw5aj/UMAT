@@ -62,7 +62,7 @@ contains
         integer, intent(in) :: nterms
         real(dp), intent(in) :: f(3, 3), isoprops(:)
         real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3)
-        integer :: i, j, k, l, n, k1, k2, a, b, c
+        integer :: i, j, k, l, n, k1, k2, a, c
         real(dp) :: mu(nterms), alpha(nterms), b(3, 3), lam2(3), lambar(3),&
             lbpow(3, nterms), det, lam(3), beta(3), gamma(3, 3), m(3, 3, 3),&
             d(3), dprime(3), i1, i3, ib(3, 3, 3, 3), dmterm1, dmterm2, dmterm3,&
@@ -149,7 +149,7 @@ contains
                     if (i == j) then
                         gamma(i, j) = gamma(i, j) + mu(n) * alpha(n) * (&
                             lbpow(i, n)/3 + sum(lbpow(:, n))/9)
-                    elseif (i /= j) then
+                    else if (i /= j) then
                         gamma(i, j) = gamma(i, j) + mu(n) * alpha(n) * (&
                             -lbpow(i, n)/3 - lbpow(j, n)/3 +&
                             sum(lbpow(:, n))/9)
@@ -205,7 +205,7 @@ contains
                     end if
                 end do
             end do
-        elseif (lam(1) - lam(2) < eps .and. lam(1) - lam(3) < eps) then
+        else if (lam(1) - lam(2) < eps .and. lam(1) - lam(3) < eps) then
             ! All three are the same
             do i = 1, 3
                 do j = i, 3
@@ -224,15 +224,17 @@ contains
                     end if
                 end do
             end do
-        else then
+        else
             ! Two are the same
             ! First simplify into one case
-            if (lam(1) - lam(2) < eps) then c = 3
-            elseif (lam(1) - lam(3) < eps) then c = 2
-            elseif (lam(2) - lam(3) < eps) then c = 1
+            if (lam(1) - lam(2) < eps) then
+                c = 3
+            else if (lam(1) - lam(3) < eps) then
+                c = 2
+            else if (lam(2) - lam(3) < eps) then
+                c = 1
             end if
             a = mod(c + 1, 3)
-            b = mod(c + 2, 3)
             ! Plug in
             do i = 1, 3
                 do j = i, 3
