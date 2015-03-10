@@ -1,18 +1,18 @@
 module hypervolmod
     !!! Module for the volumetric part hyperelastic material
     !!! Psi_vol = Sum(i=1, N){1/Di*(J-1)**(2i)}
-    use umatutils, only: dp, delta, m33det, ii
+    use umatutils, only: dp, delta, m33det, ii, ccc2ccj
     implicit none
     private
     public hypervol
 
 contains
-    subroutine hypervol(f, d, nterms, sigma, ccc)
+    subroutine hypervol(f, d, nterms, sigma, ccj)
         integer, intent(in) :: nterms
         real(dp), intent(in) :: f(3, 3), d(nterms)
-        real(dp), intent(out) :: sigma(3, 3), ccc(3, 3, 3, 3)
+        real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3)
         integer :: i, j, k, l, n
-        real(dp) :: p = 0, ptilde = 0, det
+        real(dp) :: p = 0, ptilde = 0, det, ccc(3, 3, 3, 3)
         det = m33det(f)
         do n = 1, nterms
             p = p + 2 * n * (det - 1) ** (2 * n - 1) / d(n)
@@ -42,31 +42,31 @@ contains
                 end do
             end do
         end do
-        i = 1
-        write(*, *) ccc
-    end subroutine hypervol
+        ! Switch to Jaumann rate
+        ccj = ccc2ccj(ccc, sigma)
+        end subroutine hypervol
 end module hypervolmod
 
 
 module hyperisomod
     !!! Module for the isochoric part of Ogden hyperelastic material
     !!! Used definition for Holzapfel's book
-    use umatutils, only: dp, delta, m33det, m33eigval, ii, eps
+    use umatutils, only: dp, delta, m33det, m33eigval, ii, eps, ccc2ccj
     implicit none
     private
     public hyperiso
 
 contains
-    subroutine hyperiso(f, isoprops, nterms, sigma, ccc)
+    subroutine hyperiso(f, isoprops, nterms, sigma, ccj)
         !! isoprops : mu1, alpha1, mu2, alpha2, etc.
         integer, intent(in) :: nterms
         real(dp), intent(in) :: f(3, 3), isoprops(:)
-        real(dp), intent(out) :: sigma(3, 3), ccc(3, 3, 3, 3)
+        real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3)
         integer :: i, j, k, l, n, k1, k2
         real(dp) :: mu(nterms), alpha(nterms), b(3, 3), lam2(3), lambar(3),&
             lbpow(3, nterms), det, lam(3), beta(3), gamma(3, 3), m(3, 3, 3),&
             d(3), dprime(3), i1, i3, ib(3, 3, 3, 3), dmterm1, dmterm2, dmterm3,&
-            dm(3, 3, 3, 3, 3)
+            dm(3, 3, 3, 3, 3), ccc(3, 3, 3, 3)
         mu = isoprops(1::2)
         alpha = isoprops(2::2)
         det = m33det(f)
@@ -169,7 +169,7 @@ contains
             ! Get stress first
             do i = 1, 3
                 do j = i, 3
-                    do k1 = 1, 3
+                    do k = 1, 3
                         sigma(i, j) = sigma(i, j) + beta(k) * m(i, j, k) / det
                     end do
                     ! Fill symmetric part
@@ -205,19 +205,53 @@ contains
                 end do
             end do
         end if
+        ! Switch to Jaumann rate
+        ccj = ccc2ccj(ccc, sigma)
     end subroutine hyperiso
 end module hyperisomod
 
+
+module ogdenmod
+    use umatutils, only: dp
+    use hyperisomod, only: hyperiso
+    use hypervolmod, only: hypervol
+    implicit none
+    private
+    public ogden
+
+contains
+    subroutine ogden (f, props, nterms, sigma, ccj)
+        real(dp), intent(in) :: f(3, 3), props(:)
+        integer, intent(in) :: nterms
+        real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3)
+        real(dp) :: sigmaiso(3, 3), sigmavol(3, 3), propsiso(2*nterms),&
+            propsvol(nterms), ccjiso(3, 3, 3, 3), ccjvol(3, 3, 3, 3)
+        ! Assign material properties
+        propsiso = props(:2*nterms)
+        propsvol = props(2*nterms+1:)
+        ! Calculate both parts separately
+        call hyperiso(f, propsiso, nterms, sigmaiso, ccjiso)
+        call hypervol(f, propsvol, nterms, sigmavol, ccjvol)
+        ! Add them up
+        sigma = sigmaiso + sigmavol
+        ccj = ccjiso + ccjvol
+    end subroutine ogden
+end module ogdenmod
 
 program testogden
     use umatutils, only: dp
     use hyperisomod, only: hyperiso
     use hypervolmod, only: hypervol
+    use ogdenmod, only: ogden
     implicit none
-    real(dp) :: dfgrd1(3, 3), props(3), sigma(3, 3), ccc(3, 3, 3, 3)
-    dfgrd1 = reshape([1., 0., 0., 0., 1., 0., .45, 0., 1.], [3, 3])
+    real(dp) :: dfgrd1(3, 3), props(3), sigma(3, 3), ccj(3, 3, 3, 3)
+    ! dfgrd1 = reshape([1., 0., 0., 0., 1., 0., .45, 0., 1.], [3, 3])
     ! dfgrd1 = reshape([2., 0., 0., 0., 2., 0., 0., 0., 2.], [3, 3])
+    dfgrd1 = reshape([1.5488135, 0.54488318, 0.43758721, 0.71518937,&
+        1.4236548, 0.891773, 0.60276338, 0.64589411, 1.96366276], [3, 3])
     props = [160e3_dp, 2._dp, .2_dp]
-    call hyperiso(dfgrd1, props(:size(props)*2/3), size(props)/3, sigma, ccc)
-    ! call hypervol(dfgrd1, reshape([.2_dp], [1]), 1, sigma, ccc)
+    ! call hyperiso(dfgrd1, props(:size(props)*2/3), size(props)/3, sigma, ccj)
+    ! call hypervol(dfgrd1, reshape([.2_dp], [1]), 1, sigma, ccj)
+    call ogden(dfgrd1, props, size(props)/3, sigma, ccj)
+    write (*, *) ccj
 end program testogden

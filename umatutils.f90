@@ -3,7 +3,7 @@ module umatutils
     implicit none
     private
     public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation, pi,&
-        eps, m33eigval, m33eigvect, ii
+        eps, m33eigval, m33eigvect, ii, ccc2ccj
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3) = reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
         [3, 3]), eps = 1e-8_dp, pi = 4*atan(1._dp), ii(3, 3, 3, 3) = reshape([&
@@ -19,6 +19,35 @@ module umatutils
         [3, 3, 3, 3])
         
 contains
+    function ccc2ccj(ccc, sigma) result(ccj)
+        !! Convert ccc to ccj given sigma
+        real(dp), intent(in) :: ccc(3, 3, 3, 3), sigma(3, 3)
+        real(dp) :: ccj(3, 3, 3, 3)
+        integer :: i, j, k, l
+        do i = 1, 3
+            do j = i, 3
+                do k = 1, 3
+                    do l = k, 3
+                        ccj(i, j, k, l) = ccc(i, j, k, l) + (&
+                            delta(i, k) * sigma(j, l) + &
+                            delta(i, l) * sigma(j, k) + &
+                            delta(j, k) * sigma(i, l) + &
+                            delta(j, l) * sigma(i, k)) / 2
+                        ! Fill l/k symmetry
+                        if (l /= k) then
+                            ccj(i, j, l, k) = ccj(i, j, k, l)
+                        end if
+                    end do
+                end do
+                ! Fill i/j symmetry
+                if (i /= j) then
+                    ccj(j, i, :, :) = ccj(i, j, :, :)
+                end if
+            end do
+        end do
+        return
+    end function ccc2ccj
+
     function m33eigval(a) result(eigval)
         !! Returns the eigenvalues of a 3x3 real symmetric matrix
         !! Unless lambda1 = lambda2 = lambda3, lambda1 > lambda2
