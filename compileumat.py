@@ -42,11 +42,11 @@ def run_umat(codename_list, jobname, objname, wait=False):
 
 
 if __name__ == '__main__':
-    # codename_list = ['umatutils.f90', 'modpsi_neo.f90',  'numerichyper.f90', 'nhinterface.f90']
-    # codename_list = ['umatutils.f90', 'modpsi_hgo.f90',  'numerichyper.f90', 'nhinterface.f90']
-    # codename_list = ['umatutils.f90', 'modpsi_hg.f90',  'numerichyper.f90', 'nhinterface.f90']
-    # codename_list = ['umatutils.f90', 'modpsi_hg.f90',  'numerichyper.f90', 'nhcylinterface.f90']
-    codename_list = ['umatutils.f90', 'modpsi_hgo.f90',  'numerichyper.f90', 'nhcylinterface.f90']
+    # codename_list = ['umatutils.f90', 'psimod_neo.f90',  'numerichyper.f90', 'nhinterface.f90']
+    # codename_list = ['umatutils.f90', 'psimod_hgo.f90',  'numerichyper.f90', 'nhinterface.f90']
+    # codename_list = ['umatutils.f90', 'psimod_hg.f90',  'numerichyper.f90', 'nhinterface.f90']
+    # codename_list = ['umatutils.f90', 'psimod_hg.f90',  'numerichyper.f90', 'nhcylinterface.f90']
+    codename_list = ['umatutils.f90', 'psimod_hgo.f90',  'numerichyper.f90', 'nhcylinterface.f90']
     objname = 'umat.obj'
     # jobname = 'SingleElem'
     # jobname = 'SingleElemShearNumeric'

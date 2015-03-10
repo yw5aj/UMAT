@@ -158,7 +158,7 @@ contains
 end module umatutils
 
 
-module modpsi
+module psimod
     !!! Module for the function getpsi for Holzapfel-Gasser-Ogden model
     use umatutils, only: dp, m33det
     implicit none
@@ -200,7 +200,7 @@ contains
         psi = psi_iso + psi_ani + psi_vol
         return
     end function getpsi
-end module modpsi
+end module psimod
 
 module numerichyper
     !!! Numeric method for hyperelastic materials
@@ -216,7 +216,7 @@ module numerichyper
     !!! sigma : Cauchy stress
     !!! ccj : tangent modulus for Cauchy stress in Jaumann rate    
     use umatutils, only: dp, delta, m33det, m31tensorprod, mapnotation
-    use modpsi, only: getpsi
+    use psimod, only: getpsi
     implicit none
     private
     public update_umat

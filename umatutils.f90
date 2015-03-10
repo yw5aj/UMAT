@@ -34,7 +34,7 @@ contains
         q = -27._dp / 2 * c0 - c2**3 + 9._dp / 2 * c2 * c1
         ! Extreme case is p=q=0, where x(1)=x(2)=x(3)=tr(a)/3
         if((abs(p) < eps) .and. (abs(q) < eps)) then
-            eigval = -c2/3
+            eigval = -c2 / 3
         else
             phi = 1._dp / 3 * atan(sqrt(p**3 - q**2) / q)
             ! Note that phi (-pi/6, pi/6), so x(1)=2*cos(phi) > 0 and

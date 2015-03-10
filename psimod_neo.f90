@@ -1,4 +1,4 @@
-module modpsi
+module psimod
     !!! Module for the function getpsi for Neo-Hookean material
     use umatutils, only: dp, m33det
     implicit none
@@ -20,4 +20,4 @@ contains
         psi = c10 * (ibar1 - 3) + (det - 1)**2 / d1
         return
     end function getpsi
-end module modpsi
+end module psimod

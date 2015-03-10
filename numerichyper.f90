@@ -12,7 +12,7 @@ module numerichyper
     !!! sigma : Cauchy stress
     !!! ccj : tangent modulus for Cauchy stress in Jaumann rate    
     use umatutils, only: dp, delta, m33det, m31tensorprod, mapnotation
-    use modpsi, only: getpsi
+    use psimod, only: getpsi
     implicit none
     private
     public update_umat

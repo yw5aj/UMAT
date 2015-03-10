@@ -1,4 +1,4 @@
-module modpsi
+module psimod
     !!! Module for the function getpsi for Holzapfel-Gasser-Ogden model
     use umatutils, only: dp, m33det
     implicit none
@@ -27,7 +27,7 @@ contains
         ibar1 = sum([(rcgbar(i, i), i=1, 3)])
         psi_iso = c10 * (ibar1 - 3)
         ! Get isotropic volumetric response
-        psi_vol = (det - 1)**2 / d1
+        psi_vol = ((det**2 - 1) / 2 - log(det)) / d1
         ! Get anisotropic response
         ibar411 = dot_product(a1, matmul(rcgbar, a1))
         ibar422 = dot_product(a2, matmul(rcgbar, a2))
@@ -40,4 +40,4 @@ contains
         psi = psi_iso + psi_ani + psi_vol
         return
     end function getpsi
-end module modpsi
+end module psimod
