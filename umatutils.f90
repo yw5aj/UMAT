@@ -3,7 +3,7 @@ module umatutils
     implicit none
     private
     public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation, pi,&
-        eps, m33eigval, m33eigvect, ii, ccc2ccj
+        eps, m33eigval, m33eigvect, ii, ccc2ccj, m33inv
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3) = reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
         [3, 3]), eps = 1e-8_dp, pi = 4*atan(1._dp), ii(3, 3, 3, 3) = reshape([&
@@ -19,6 +19,23 @@ module umatutils
         [3, 3, 3, 3])
         
 contains
+    function m33inv(a) result(ainv)
+        !! Inverse the real non-symmetric 3x3 matrix
+        real(dp), intent(in) :: a(3, 3)
+        real(dp) :: ainv(3, 3), cofactor(3, 3), det
+        det = m33det(a)
+        cofactor(1,1) = +(a(2,2)*a(3,3)-a(2,3)*a(3,2))
+        cofactor(1,2) = -(a(2,1)*a(3,3)-a(2,3)*a(3,1))
+        cofactor(1,3) = +(a(2,1)*a(3,2)-a(2,2)*a(3,1))
+        cofactor(2,1) = -(a(1,2)*a(3,3)-a(1,3)*a(3,2))
+        cofactor(2,2) = +(a(1,1)*a(3,3)-a(1,3)*a(3,1))
+        cofactor(2,3) = -(a(1,1)*a(3,2)-a(1,2)*a(3,1))
+        cofactor(3,1) = +(a(1,2)*a(2,3)-a(1,3)*a(2,2))
+        cofactor(3,2) = -(a(1,1)*a(2,3)-a(1,3)*a(2,1))
+        cofactor(3,3) = +(a(1,1)*a(2,2)-a(1,2)*a(2,1))
+        ainv = transpose(cofactor) / det
+    end function m33inv
+    
     function ccc2ccj(ccc, sigma) result(ccj)
         !! Convert ccc to ccj given sigma
         real(dp), intent(in) :: ccc(3, 3, 3, 3), sigma(3, 3)

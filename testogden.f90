@@ -51,7 +51,7 @@ end module hypervolmod
 module hyperisomod
     !!! Module for the isochoric part of Ogden hyperelastic material
     !!! Used definition for Holzapfel's book
-    use umatutils, only: dp, delta, m33det, m33eigval, ii, eps, ccc2ccj
+    use umatutils, only: dp, delta, m33det, m33eigval, ii, eps, ccc2ccj, m33inv
     implicit none
     private
     public hyperiso
@@ -299,6 +299,24 @@ contains
         sigma = sigmaiso + sigmavol
         ccj = ccjiso + ccjvol
     end subroutine ogden
+    
+    subroutine ogdenpk2 (f, props, nterms, sigma, ccj, siso, svol)
+        !! subroutine to include output of pk2 stress
+        real(dp), intent(in) :: f(3, 3), props(:)
+        integer, intent(in) :: nterms
+        real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3), siso(3, 3),&
+            svol(3, 3)
+        real(dp) :: sigmaiso(3, 3), sigmavol(3, 3)
+        ! Get the spatial representation
+        call ogden (f, props, nterms, sigma, ccj)
+        sigmavol = sum([(sigma(i, i), do i = 1, 3)]) * delta / 3
+        sigmaiso = sigma - sigmavol
+        ! Convert to 2nd PK stress
+        det = m33det(f)
+        finv = m33inv(f)
+        siso = det * matmul(matmul(finv, sigmaiso), transpose(finv))
+        svol = det * matmul(matmul(finv, sigmavol), transpose(finv))
+    end subroutine ogdenpk2
 end module ogdenmod
 
 program testogden
