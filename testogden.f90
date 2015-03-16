@@ -164,8 +164,8 @@ contains
         ! Put everything together, for three distinct cases
         sigma = 0
         ccc = 0
-        if ((lam(1) - lam(2) >= eps) .and. (lam(1) - lam(3) >= eps) .and.&
-            (lam(2) - lam(3) >= eps)) then
+        if ((abs(lam(1) - lam(2)) >= eps) .and. (abs(lam(1) - lam(3)) >= eps)&
+            .and. (abs(lam(2) - lam(3)) >= eps)) then
             ! If all three principal stretches are different
             ! Get stress first
             do i = 1, 3
@@ -205,7 +205,8 @@ contains
                     end if
                 end do
             end do
-        else if (lam(1) - lam(2) < eps .and. lam(1) - lam(3) < eps) then
+        else if (abs(lam(1) - lam(2)) < eps .and. abs(lam(1) - lam(3)) < eps)&
+            then
             ! All three are the same
             do i = 1, 3
                 do j = i, 3
@@ -227,14 +228,15 @@ contains
         else
             ! Two are the same
             ! First simplify into one case
-            if (lam(1) - lam(2) < eps) then
+            if (abs(lam(1) - lam(2)) < eps) then
                 c = 3
-            else if (lam(1) - lam(3) < eps) then
+            else if (abs(lam(1) - lam(3)) < eps) then
                 c = 2
-            else if (lam(2) - lam(3) < eps) then
+            else if (abs(lam(2) - lam(3)) < eps) then
                 c = 1
             end if
             a = mod(c + 1, 3)
+            write (*, *) lam
             ! Plug in
             do i = 1, 3
                 do j = i, 3
@@ -275,12 +277,12 @@ end module hyperisomod
 
 
 module ogdenmod
-    use umatutils, only: dp
+    use umatutils, only: dp, delta, m33det, m33inv
     use hyperisomod, only: hyperiso
     use hypervolmod, only: hypervol
     implicit none
     private
-    public ogden
+    public ogden, ogdenpk2
 
 contains
     subroutine ogden (f, props, nterms, sigma, ccj)
@@ -306,11 +308,13 @@ contains
         integer, intent(in) :: nterms
         real(dp), intent(out) :: sigma(3, 3), ccj(3, 3, 3, 3), siso(3, 3),&
             svol(3, 3)
-        real(dp) :: sigmaiso(3, 3), sigmavol(3, 3)
+        real(dp) :: sigmaiso(3, 3), sigmavol(3, 3), det, finv(3, 3)
+        integer :: i
         ! Get the spatial representation
         call ogden (f, props, nterms, sigma, ccj)
-        sigmavol = sum([(sigma(i, i), do i = 1, 3)]) * delta / 3
+        sigmavol = sum([(sigma(i, i), i = 1, 3)]) / 3 * delta
         sigmaiso = sigma - sigmavol
+        write (*, *) sigmaiso
         ! Convert to 2nd PK stress
         det = m33det(f)
         finv = m33inv(f)
@@ -323,16 +327,18 @@ program testogden
     use umatutils, only: dp
     use hyperisomod, only: hyperiso
     use hypervolmod, only: hypervol
-    use ogdenmod, only: ogden
+    use ogdenmod, only: ogden, ogdenpk2
     implicit none
-    real(dp) :: dfgrd1(3, 3), props(3), sigma(3, 3), ccj(3, 3, 3, 3)
+    real(dp) :: dfgrd1(3, 3), props(3), sigma(3, 3), ccj(3, 3, 3, 3),&
+        siso(3, 3), svol(3, 3), f2same(3, 3), f3same(3, 3)
     ! dfgrd1 = reshape([1., 0., 0., 0., 1., 0., .45, 0., 1.], [3, 3])
     ! dfgrd1 = reshape([2., 0., 0., 0., 2., 0., 0., 0., 2.], [3, 3])
     dfgrd1 = reshape([1.5488135, 0.54488318, 0.43758721, 0.71518937,&
         1.4236548, 0.891773, 0.60276338, 0.64589411, 1.96366276], [3, 3])
+    f2same = reshape([2.53680432, 0.73945601, -0.4530953 ,  0.86524763,  1.45320696,&
+        0.75649414, -0.21189672,  0.48545667,  2.69808608], [3, 3])        
     props = [160e3_dp, 2._dp, .2_dp]
     ! call hyperiso(dfgrd1, props(:size(props)*2/3), size(props)/3, sigma, ccj)
     ! call hypervol(dfgrd1, reshape([.2_dp], [1]), 1, sigma, ccj)
-    call ogden(dfgrd1, props, size(props)/3, sigma, ccj)
-    write (*, *) ccj
+    call ogdenpk2(f2same, props, size(props)/3, sigma, ccj, siso, svol)
 end program testogden

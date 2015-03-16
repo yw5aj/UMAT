@@ -160,7 +160,8 @@ def get_ogden_modulus_paper(f, ogden_param):
     return c_sigma_c
 
 
-def get_modulus(f, ogden_param, d_1, get_ogden_modulus, rate='Jaumann', stress='Cauchy'):
+def get_modulus(f, ogden_param, d_1, get_ogden_modulus, rate='Jaumann',
+                stress='Cauchy'):
     # Get common quantities
     deformation_dict = get_deformation(f)
     det = deformation_dict['det']
@@ -171,8 +172,9 @@ def get_modulus(f, ogden_param, d_1, get_ogden_modulus, rate='Jaumann', stress='
     # Return results
     sigma = get_stress(f, ogden_param, d_1, stress='Cauchy')
     c_sigma_j = c_sigma_c + 0.5 * (np.einsum('ik, jl', delta, sigma) +
-                                   np.einsum('jk, il', delta, sigma) + np.einsum('il, jk', delta,
-                                                                                 sigma) + np.einsum('jl, ik', delta, sigma))
+                                   np.einsum('jk, il', delta, sigma) +
+                                   np.einsum('il, jk', delta, sigma) +
+                                   np.einsum('jl, ik', delta, sigma))
     return c_sigma_j
 
 
@@ -182,8 +184,9 @@ def get_vol_modulus(det, d_1, stress='Cauchy', rate='Jaumann'):
     c_sigma_j = c_tau_j / det
     sigma = get_vol_stress(det, d_1)
     c_sigma_c = c_sigma_j - 0.5 * (np.einsum('ik, jl', delta, sigma) +
-                                   np.einsum('jk, il', delta, sigma) + np.einsum('il, jk', delta,
-                                                                                 sigma) + np.einsum('jl, ik', delta, sigma))
+                                   np.einsum('jk, il', delta, sigma) +
+                                   np.einsum('il, jk', delta, sigma) +
+                                   np.einsum('jl, ik', delta, sigma))
     if stress == 'Cauchy' and rate == 'Jaumann':
         tangent = c_sigma_j
     elif stress == 'Kirchoff' and rate == 'Jaumann':
@@ -191,6 +194,18 @@ def get_vol_modulus(det, d_1, stress='Cauchy', rate='Jaumann'):
     elif stress == 'Cauchy' and rate == 'Convective':
         tangent = c_sigma_c
     return tangent
+
+
+def get_neohookean_stress(F, params):
+    """
+    Calculates Cauchy stress based on model type.
+    """
+    J = np.linalg.det(F)
+    F_bar = J**(-1./3.) * F
+    B_bar = F_bar.dot(F_bar.T)
+    sigma_iso = 2./J*params[0]*(B_bar - 1./3.*np.trace(B_bar)*np.eye(3))
+    sigma_vol = 2./params[1]*(J-1.)*np.eye(3)
+    return sigma_iso, sigma_vol
 
 
 def get_neohookean_modulus(f, nh_param):
@@ -293,9 +308,20 @@ def get_symmetric_part(a):
     return a_sym
 
 
+def get_same_lambda(f, num=2):
+    c = f.T.dot(f)
+    u = linalg.sqrtm(c)
+    r = f.dot(np.linalg.inv(u))
+    lambda_, cn = np.linalg.eig(u)
+    lambda_[:num] = lambda_[0]
+    new_u = np.sum([lambda_[i] * np.tensordot(cn.T[i], cn.T[i], 0)
+                    for i in range(3)], axis=0)
+    new_f = r.dot(new_u)
+    return new_f
+
 if __name__ == '__main__':
     from constants import f
-    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
+#    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
     mu_array, alpha_array = np.array([160e3]), np.array([2.])
     ogden_param = np.c_[mu_array, alpha_array]
     nh_param = np.array((80e3, .2))
@@ -313,4 +339,8 @@ if __name__ == '__main__':
         stress='Cauchy')
     ccc_iso_holzapfel = get_ogden_modulus_holzapfel(f, ogden_param)
     ccc_iso_paper = get_ogden_modulus_paper(f, ogden_param)
+    ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
+    # %% Try same lambda
+    f = get_same_lambda(f, 2)
+    sigma_iso, sigma_vol = get_neohookean_stress(f, nh_param)
     ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
