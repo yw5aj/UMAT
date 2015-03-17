@@ -3,7 +3,7 @@ module umatutils
     implicit none
     private
     public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation, pi,&
-        eps, m33eigval, m33eigvect, ii
+        eps, m33eigvalsh, m33eigvect, ii
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3) = reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
         [3, 3]), eps = 1e-8_dp, pi = 4*atan(1._dp), ii(3, 3, 3, 3) = reshape([&
@@ -19,7 +19,7 @@ module umatutils
         [3, 3, 3, 3])
         
 contains
-    function m33eigval(a) result(eigval)
+    function m33eigvalsh(a) result(eigval)
         !! Returns the eigenvalues of a 3x3 real symmetric matrix
         !! Unless lambda1 = lambda2 = lambda3, lambda1 > lambda2
         real(dp), intent(in) :: a(3, 3)
@@ -46,7 +46,7 @@ contains
             eigval = (sqrt(p) * x - c2) / 3
         end if
         return
-    end function m33eigval
+    end function m33eigvalsh
     
     function m31cross(a, b) result(c)
         !! Computes the cross product between two 3x1 vectors
@@ -78,7 +78,7 @@ contains
         real(dp), intent(out) :: eigval(3), eigvect(3, 3)
         real(dp) :: mu, cross1(3), cross2(3)
         integer :: i
-        eigval = m33eigval(a)
+        eigval = m33eigvalsh(a)
         ! Get the 1st and 2nd eigenvector, assume x1 /= x2
         ! Deal with x1=x2(=x3) and the end of first loop
         do i = 1, 2

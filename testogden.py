@@ -340,7 +340,11 @@ if __name__ == '__main__':
     ccc_iso_holzapfel = get_ogden_modulus_holzapfel(f, ogden_param)
     ccc_iso_paper = get_ogden_modulus_paper(f, ogden_param)
     ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
-    # %% Try same lambda
-    f = get_same_lambda(f, 2)
-    sigma_iso, sigma_vol = get_neohookean_stress(f, nh_param)
-    ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
+    # %% Try same lambda: 2
+    fnew = get_same_lambda(f, 2)
+    sigma_iso, sigma_vol = get_neohookean_stress(fnew, nh_param)
+    ccc_iso_neohookean = get_neohookean_modulus(fnew, nh_param)
+    # %% Try same lambda: 3
+    fnew = get_same_lambda(f, 3)
+    sigma_iso, sigma_vol = get_neohookean_stress(fnew, nh_param)
+    ccc_iso_neohookean = get_neohookean_modulus(fnew, nh_param)

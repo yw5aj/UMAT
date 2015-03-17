@@ -51,7 +51,7 @@ end module hypervolmod
 module hyperisomod
     !!! Module for the isochoric part of Ogden hyperelastic material
     !!! Used definition for Holzapfel's book
-    use umatutils, only: dp, delta, m33det, m33eigval, ii, eps, ccc2ccj, m33inv
+    use umatutils, only: dp, delta, m33det, m33eigvalsh, ii, eps, ccc2ccj, m33inv
     implicit none
     private
     public hyperiso
@@ -71,7 +71,7 @@ contains
         alpha = isoprops(2::2)
         det = m33det(f)
         b = matmul(f, transpose(f))
-        lam2 = m33eigval(b)
+        lam2 = m33eigvalsh(b)
         lam = sqrt(lam2)
         lambar = lam * det**(-1._dp/3)
         ! I1, I3, and Ib
@@ -257,8 +257,7 @@ contains
                                 + gamma(a, c) * (&
                                     m(i, j, c) * (delta(k, l) - m(k, l, c))&
                                     + (delta(i, j) - m(i, j, c)) * m(k, l, c)&
-                                    / det))&
-                                / det
+                                    )) / det
                             if (k /= l) then
                                 ccc(i, j, l, k) = ccc(i, j, k, l)
                             end if
@@ -270,6 +269,8 @@ contains
                 end do
             end do
         end if
+        write (*, *) sigma
+        write (*, *) ccc
         ! Switch to Jaumann rate
         ccj = ccc2ccj(ccc, sigma)
     end subroutine hyperiso
@@ -314,7 +315,6 @@ contains
         call ogden (f, props, nterms, sigma, ccj)
         sigmavol = sum([(sigma(i, i), i = 1, 3)]) / 3 * delta
         sigmaiso = sigma - sigmavol
-        write (*, *) sigmaiso
         ! Convert to 2nd PK stress
         det = m33det(f)
         finv = m33inv(f)
@@ -336,7 +336,9 @@ program testogden
     dfgrd1 = reshape([1.5488135, 0.54488318, 0.43758721, 0.71518937,&
         1.4236548, 0.891773, 0.60276338, 0.64589411, 1.96366276], [3, 3])
     f2same = reshape([2.53680432, 0.73945601, -0.4530953 ,  0.86524763,  1.45320696,&
-        0.75649414, -0.21189672,  0.48545667,  2.69808608], [3, 3])        
+        0.75649414, -0.21189672,  0.48545667,  2.69808608], [3, 3])  
+    f3same = reshape([ 0.93799125, -0.05684585, -0.37961307, -0.04642103,  0.6660474 ,&
+       -0.14800237, -0.29076481, -0.2496549 ,  0.72470396], [3, 3])
     props = [160e3_dp, 2._dp, .2_dp]
     ! call hyperiso(dfgrd1, props(:size(props)*2/3), size(props)/3, sigma, ccj)
     ! call hypervol(dfgrd1, reshape([.2_dp], [1]), 1, sigma, ccj)
