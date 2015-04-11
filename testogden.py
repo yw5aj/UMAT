@@ -8,6 +8,7 @@ Created on Mon Dec  1 20:36:10 2014
 
 import numpy as np
 from scipy import linalg
+from collections import Counter
 
 delta = np.eye(3)
 
@@ -101,7 +102,7 @@ def get_ogden_modulus_holzapfel(f, ogden_param):
                                   bna.T[b], bna.T[b]))
     return c_sigma_c
 
-
+# %%
 def get_ogden_modulus_paper(f, ogden_param):
     # Get common quantities
     deformation_dict = get_deformation(f)
@@ -109,13 +110,16 @@ def get_ogden_modulus_paper(f, ogden_param):
     lambda_ = deformation_dict['lambda_']
     lambdabar = deformation_dict['lambdabar']
     bna = deformation_dict['bna']
+    cna = deformation_dict['cna']
     i1 = deformation_dict['i1']
     b = deformation_dict['b']
+    C = deformation_dict['c']
     i3 = det ** 2
     ii = .5 * (np.einsum('ik, jl', delta, delta) +
                np.einsum('il, jk', delta, delta))
     # Calculate beta, gamma and m
     m = [[] for i in range(3)]
+    M = [[] for i in range(3)]
     d = [[] for i in range(3)]
     dprime = [[] for i in range(3)]
     dmdg = [[] for i in range(3)]
@@ -124,6 +128,7 @@ def get_ogden_modulus_paper(f, ogden_param):
     ib = .5 * (np.einsum('ac, bd', b, b) + np.einsum('ad, bc', b, b))
     for i in range(3):
         m[i] = np.tensordot(bna.T[i], bna.T[i], 0)
+        M[i] = np.tensordot(cna.T[i], cna.T[i], 0) / lambda_[i] ** 2
         beta[i] = np.sum(
             [mu * (lambdabar[i] ** alpha - (lambdabar ** alpha).mean())
              for mu, alpha in ogden_param])
@@ -144,22 +149,42 @@ def get_ogden_modulus_paper(f, ogden_param):
             if not i == j:
                 gamma[i][j] = np.sum(
                     [mu * alpha * (-1. / 3 * lambdabar[i] ** alpha -
-                     1. / 3 * lambdabar[j] ** alpha
-                     + 1. / 9. * (lambdabar ** alpha).sum())
+                     1. / 3 * lambdabar[j] ** alpha +
+                     1. / 9. * (lambdabar ** alpha).sum())
                      for mu, alpha in ogden_param])
             elif i == j:
                 gamma[i][j] = np.sum([
                     mu * alpha * (1. / 3 * lambdabar[i] ** alpha +
                                   1. / 9. * (lambdabar ** alpha).sum())
                     for mu, alpha in ogden_param])
-    c_sigma_c = np.zeros((3, 3, 3, 3))
-    for i in range(3):
-        c_sigma_c += 2 / det * beta[i] * dmdg[i]
-        for j in range(3):
-            c_sigma_c += 1 / det * gamma[i][j] * np.tensordot(m[i], m[j], 0)
+    if len(set(lambda_)) == 3:
+        c_sigma_c = np.zeros((3, 3, 3, 3))
+        for i in range(3):
+            c_sigma_c += 2 / det * beta[i] * dmdg[i]
+            for j in range(3):
+                c_sigma_c += 1 / det * gamma[i][j] * np.tensordot(
+                    m[i], m[j], 0)
+    elif len(set(lambda_)) == 2:
+        if lambda_[0] == lambda_[1]:
+            idx3 = 2
+        elif lambda_[0] == lambda_[2]:
+            idx3 = 1
+        elif lambda_[1] == lambda_[2]:
+            idx3 = 0
+        idx1 = (idx3 + 1) % 3
+        c_sigma_c = -1 / det * beta[idx1] * 2 * ii +\
+            1 / det * (beta[idx3] - beta[idx1]) * 2 * dmdg[idx3] +\
+            1 / det * gamma[idx1][idx1] * np.tensordot(
+            (np.eye(3) - m[idx3]), (np.eye(3) - m[idx3]), 0) +\
+            1 / det * gamma[idx3][idx3] * np.tensordot(
+            m[idx3], m[idx3], 0) +\
+            1 / det * gamma[idx1][idx3] * (
+            np.tensordot(m[idx3], (np.eye(3) - m[idx3]), 0) +
+            np.tensordot(np.eye(3) - m[idx3], m[idx3], 0))
     return c_sigma_c
 
 
+# %%
 def get_modulus(f, ogden_param, d_1, get_ogden_modulus, rate='Jaumann',
                 stress='Cauchy'):
     # Get common quantities
@@ -319,6 +344,8 @@ def get_same_lambda(f, num=2):
     new_f = r.dot(new_u)
     return new_f
 
+# %% Main program
+
 if __name__ == '__main__':
     from constants import f
 #    f = np.array([[1, 0, 0.45], [0, 1, 0], [0, 0, 1]])
@@ -342,9 +369,27 @@ if __name__ == '__main__':
     ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
     # %% Try same lambda: 2
     fnew = get_same_lambda(f, 2)
+    fnew = np.array([[2, 0, 0], [0, 2, 0], [0, 0, .25]])
+    sigma_iso, sigma_vol = get_neohookean_stress(fnew, nh_param)
+    ccc_iso_neohookean = get_neohookean_modulus(fnew, nh_param)
+    # %% Try simple shear
+    fnew = np.array([[1, 0, .45], [0, 1, 0], [0, 0, 1]])
     sigma_iso, sigma_vol = get_neohookean_stress(fnew, nh_param)
     ccc_iso_neohookean = get_neohookean_modulus(fnew, nh_param)
     # %% Try same lambda: 3
     fnew = get_same_lambda(f, 3)
     sigma_iso, sigma_vol = get_neohookean_stress(fnew, nh_param)
     ccc_iso_neohookean = get_neohookean_modulus(fnew, nh_param)
+    # %%
+    f = np.array([[2, 0, 0], [0, 2, 0], [0, 0, .25]])
+    ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
+    f11_list = np.linspace(1.9995, 2.0005, 11)
+    correct_list, incorrect_list = [], []
+    for i, f11 in enumerate(f11_list):
+        f[0, 0] = f11
+        ccc_iso_neohookean = get_neohookean_modulus(f, nh_param)
+        ccc_iso_paper = get_ogden_modulus_paper(f, ogden_param)
+        correct_list.append(ccc_iso_neohookean.ravel()[10])
+        incorrect_list.append(ccc_iso_paper.ravel()[10])
+    f = np.array([[2, 0, 0], [0, 2, 0], [0, 0, .25]])
+    ccc_iso_paper = get_ogden_modulus_paper(f, ogden_param)

@@ -51,7 +51,8 @@ end module hypervolmod
 module hyperisomod
     !!! Module for the isochoric part of Ogden hyperelastic material
     !!! Used definition for Holzapfel's book
-    use umatutils, only: dp, delta, m33det, m33eigvalsh, ii, eps, ccc2ccj, m33inv
+    use umatutils, only: dp, delta, m33det, m33eigvalsh, ii, eps, ccc2ccj,&
+        m33inv
     implicit none
     private
     public hyperiso
@@ -65,8 +66,8 @@ contains
         integer :: i, j, k, l, n, k1, k2, a, c
         real(dp) :: mu(nterms), alpha(nterms), b(3, 3), lam2(3), lambar(3),&
             lbpow(3, nterms), det, lam(3), beta(3), gamma(3, 3), m(3, 3, 3),&
-            d(3), dprime(3), i1, i3, ib(3, 3, 3, 3), dmterm1, dmterm2, dmterm3,&
-            dm(3, 3, 3, 3, 3), ccc(3, 3, 3, 3)
+            d(3), dprime(3), i1, i3, ib(3, 3, 3, 3), dmterm1, dmterm2,&
+            dmterm3, dm(3, 3, 3, 3, 3), ccc(3, 3, 3, 3), b2(3, 3), d3
         mu = isoprops(1::2)
         alpha = isoprops(2::2)
         det = m33det(f)
@@ -102,34 +103,6 @@ contains
             m(:, :, i) = (matmul(b, b) - (i1 - lam2(i)) * b +&
                 i3 / lam2(i) * delta) / d(i)
         end do
-        ! dm_i
-        do n = 1, 3
-            do i = 1, 3
-                do j = i, 3
-                    do k = 1, 3
-                        do l = k, 3
-                            dmterm1 = ib(i, j, k, l) - b(i, j) * b(k, l)&
-                                + i3 / lam2(n) * (delta(i, j) * delta(k, l)&
-                                - ii(i, j, k, l))
-                            dmterm2 = lam2(n) * (b(i, j) * m(k, l, n)&
-                                + m(i, j, n) * b(k, l)) - dprime(n)/2 * lam(n)&
-                                * m(i, j, n) * m(k, l, n)
-                            dmterm3 = i3 / lam2(n) * (delta(i, j) * m(k, l, n)&
-                                + m(i, j, n) * delta(k, l))
-                            dm(i, j, k, l, n) = (dmterm1+dmterm2-dmterm3)/d(n)
-                            ! Fill symmetric part k, l interchange
-                            if (k /= l) then
-                                dm(i, j, l, k, n) = dm(i, j, k, l, n)
-                            end if
-                        end do
-                    end do
-                    ! Fill symmetric part i, j interchange
-                    if (i /= j) then
-                        dm(j, i, :, :, n) = dm(i, j, :, :, n)
-                    end if
-                end do
-            end do
-        end do
         ! lambdabar_alpha, 3 x nterms
         do n = 1, nterms
             lbpow(:, n) = lambar**(alpha(n))
@@ -159,6 +132,34 @@ contains
                 if (i /= j) then
                     gamma(j, i) = gamma(i, j)
                 end if
+            end do
+        end do
+        ! dm_i
+        do n = 1, 3
+            do i = 1, 3
+                do j = i, 3
+                    do k = 1, 3
+                        do l = k, 3
+                            dmterm1 = ib(i, j, k, l) - b(i, j) * b(k, l)&
+                                + i3 / lam2(n) * (delta(i, j) * delta(k, l)&
+                                - ii(i, j, k, l))
+                            dmterm2 = lam2(n) * (b(i, j) * m(k, l, n)&
+                                + m(i, j, n) * b(k, l)) - dprime(n)/2 *&
+                                lam(n) * m(i, j, n) * m(k, l, n)
+                            dmterm3 = i3 / lam2(n) * (delta(i, j) *&
+                                m(k, l, n) + m(i, j, n) * delta(k, l))
+                            dm(i, j, k, l, n) = (dmterm1+dmterm2-dmterm3)/d(n)
+                            ! Fill symmetric part k, l interchange
+                            if (k /= l) then
+                                dm(i, j, l, k, n) = dm(i, j, k, l, n)
+                            end if
+                        end do
+                    end do
+                    ! Fill symmetric part i, j interchange
+                    if (i /= j) then
+                        dm(j, i, :, :, n) = dm(i, j, :, :, n)
+                    end if
+                end do
             end do
         end do
         ! Put everything together, for three distinct cases
@@ -197,7 +198,7 @@ contains
                             if (k /= l) then
                                 ccc(i, j, l, k) = ccc(i, j, k, l)
                             end if
-                        end do    
+                        end do
                     end do
                     ! Fill symmetric part, i, j interchange
                     if (i /= j) then
@@ -236,7 +237,6 @@ contains
                 c = 1
             end if
             a = mod(c + 1, 3)
-            write (*, *) lam
             ! Plug in
             do i = 1, 3
                 do j = i, 3
@@ -269,8 +269,6 @@ contains
                 end do
             end do
         end if
-        write (*, *) sigma
-        write (*, *) ccc
         ! Switch to Jaumann rate
         ccj = ccc2ccj(ccc, sigma)
     end subroutine hyperiso
@@ -302,7 +300,7 @@ contains
         sigma = sigmaiso + sigmavol
         ccj = ccjiso + ccjvol
     end subroutine ogden
-    
+
     subroutine ogdenpk2 (f, props, nterms, sigma, ccj, siso, svol)
         !! subroutine to include output of pk2 stress
         real(dp), intent(in) :: f(3, 3), props(:)
@@ -330,17 +328,22 @@ program testogden
     use ogdenmod, only: ogden, ogdenpk2
     implicit none
     real(dp) :: dfgrd1(3, 3), props(3), sigma(3, 3), ccj(3, 3, 3, 3),&
-        siso(3, 3), svol(3, 3), f2same(3, 3), f3same(3, 3)
+        siso(3, 3), svol(3, 3), f2same(3, 3), f3same(3, 3), fsmplshr(3, 3), &
+        feqbi(3, 3)
     ! dfgrd1 = reshape([1., 0., 0., 0., 1., 0., .45, 0., 1.], [3, 3])
     ! dfgrd1 = reshape([2., 0., 0., 0., 2., 0., 0., 0., 2.], [3, 3])
-    dfgrd1 = reshape([1.5488135, 0.54488318, 0.43758721, 0.71518937,&
-        1.4236548, 0.891773, 0.60276338, 0.64589411, 1.96366276], [3, 3])
-    f2same = reshape([2.53680432, 0.73945601, -0.4530953 ,  0.86524763,  1.45320696,&
-        0.75649414, -0.21189672,  0.48545667,  2.69808608], [3, 3])  
-    f3same = reshape([ 0.93799125, -0.05684585, -0.37961307, -0.04642103,  0.6660474 ,&
-       -0.14800237, -0.29076481, -0.2496549 ,  0.72470396], [3, 3])
+    fsmplshr = reshape([1., 0., 0., 0., 1., 0., .45, 0., 1.], [3, 3])
+    feqbi = reshape([2., 0., 0., 0., 2., 0., 0., 0., .25], [3, 3])
+    ! dfgrd1 = reshape([1.5488135, 0.54488318, 0.43758721, 0.71518937,&
+        ! 1.4236548, 0.891773, 0.60276338, 0.64589411, 1.96366276], [3, 3])
+    f2same = reshape([2.53680432, 0.73945601, -0.4530953 , 0.86524763,&
+                      1.45320696, 0.75649414, -0.21189672, 0.48545667,&
+                      2.69808608], [3, 3])
+    f3same = reshape([0.93799125, -0.05684585, -0.37961307, -0.04642103,&
+                      0.6660474 , -0.14800237, -0.29076481, -0.24965490,&
+                      0.72470396], [3, 3])
     props = [160e3_dp, 2._dp, .2_dp]
     ! call hyperiso(dfgrd1, props(:size(props)*2/3), size(props)/3, sigma, ccj)
     ! call hypervol(dfgrd1, reshape([.2_dp], [1]), 1, sigma, ccj)
-    call ogdenpk2(f2same, props, size(props)/3, sigma, ccj, siso, svol)
+    call ogdenpk2(feqbi, props, size(props)/3, sigma, ccj, siso, svol)
 end program testogden

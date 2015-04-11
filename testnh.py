@@ -11,7 +11,7 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     def get_psi(C, params):
         J = np.sqrt(np.linalg.det(C))
         Cbar = J**(-2./3.) * C
-        Ibar1 = np.trace(Cbar)   
+        Ibar1 = np.trace(Cbar)
         if params['model'] == 'Neo-Hookean':
             psi = params['G'] * (Ibar1-3.) + 1./params['D']*(J-1.)**2
         elif params['model'] == 'Holzapfel':
@@ -31,7 +31,7 @@ def get_stress_numerical(F, params, eps_s=EPS, output='Cauchy'):
     for i in range(3):
         for j in range(3):
             e_i, e_j = np.eye(3)[[i, j]]
-            psiptb = get_psi(C + eps_s*(np.tensordot(e_i, e_j, 0) + 
+            psiptb = get_psi(C + eps_s*(np.tensordot(e_i, e_j, 0) +
                 np.tensordot(e_j, e_i, 0)), params)
             S[i, j] = (psiptb - psi) / eps_s
     tau = F.dot(S).dot(F.T)
@@ -78,20 +78,29 @@ def get_C_CJ_ij(F, params, i, j, eps_c=EPS, eps_s=EPS,
         return F_hat
     J = np.linalg.det(F)
     tau = get_stress(F, params, output='Kirchoff', eps_s=eps_s)
-    tau_perturb = get_stress(perturb(F, i, j, eps_c=eps_c), params, 
+    tau_perturb = get_stress(perturb(F, i, j, eps_c=eps_c), params,
                              output='Kirchoff', eps_s=eps_s)
     C_CJ_ij = 1. / J / eps_c * (tau_perturb - tau)
     return C_CJ_ij
 
 
-def get_C_CJ_numerical(F, params, get_stress=get_stress_numerical, 
+def get_C_CJ_numerical(F, params, get_stress=get_stress_numerical,
                        eps_c=EPS, eps_s=EPS):
     C_CJ_numerical = np.empty([3, 3, 3, 3])
     for i in range(3):
         for j in range(3):
-            C_CJ_numerical[:, :, i, j] = get_C_CJ_ij(F, params, i, j, 
+            C_CJ_numerical[:, :, i, j] = get_C_CJ_ij(F, params, i, j,
                 eps_c=eps_c, eps_s=eps_s, get_stress=get_stress)
     return C_CJ_numerical
+
+
+def ccj2ccc(ccj, sigma):
+    delta = np.eye(3)
+    ccc = ccj - 0.5 * (np.einsum('ik, jl', delta, sigma) +
+                       np.einsum('jk, il', delta, sigma) +
+                       np.einsum('il, jk', delta, sigma) +
+                       np.einsum('jl, ik', delta, sigma))
+    return ccc
 
 
 def get_C_CJ_theoretical(F, params):
@@ -105,13 +114,13 @@ def get_C_CJ_theoretical(F, params):
                 for l in range(3):
                     if params['model'] == 'Neo-Hookean':
                         C_CJ_theoretical[i, j, k, l] = 2. / J * params['G'] *\
-                            (0.5 * (np.eye(3)[i, k] * B_bar[j, l] + 
+                            (0.5 * (np.eye(3)[i, k] * B_bar[j, l] +
                             B_bar[i, k] * np.eye(3)[j, l] +
                             np.eye(3)[i, l] * B_bar[j, k] +
                             B_bar[i, l] * np.eye(3)[j, k]) -
                             2./3. * (
-                            np.eye(3)[i, j] * B_bar[k, l] + 
-                            B_bar[i, j] * np.eye(3)[k, l]) + 
+                            np.eye(3)[i, j] * B_bar[k, l] +
+                            B_bar[i, j] * np.eye(3)[k, l]) +
                             2./9. * np.eye(3)[i, j] * np.eye(3)[k, l] *
                             np.trace(B_bar)) + (2. / params['D'] * (2.*J - 1.)
                             * np.eye(3)[i, j] * np.eye(3)[k, l])
@@ -133,7 +142,7 @@ def plot_error(dfgrd_list, maxindex, params, axs=None, add_color_map=False):
             'ls': '-.', 'color':'k'}
         ssres, sstot = plot_stress(dfgrd_list, maxindex, params, eps_s, axs[0],
                     do_plot, **kwargs)
-        err_s[i] = ssres / sstot 
+        err_s[i] = ssres / sstot
         for j in range(NPOW):
             eps_c = np.power(10., -1*j)
             ccj_theoretical = get_C_CJ_theoretical(dfgrd_list[-1], params)
@@ -157,7 +166,7 @@ def plot_error(dfgrd_list, maxindex, params, axs=None, add_color_map=False):
         (maxindex[0]+1, maxindex[1]+1))
     # Plot the ccj contour plot
     from matplotlib.colors import LogNorm
-    im = axs[2].imshow(err_c, norm=LogNorm(vmin=1e-9, vmax=1), 
+    im = axs[2].imshow(err_c, norm=LogNorm(vmin=1e-9, vmax=1),
         interpolation='none')
     # Format the contour plot
     axs[2].set_xlabel(r'$\varepsilon_C$')
@@ -178,7 +187,7 @@ def plot_error(dfgrd_list, maxindex, params, axs=None, add_color_map=False):
         axin = inset_axes(axs[2], width='100%', height='100%',
                               bbox_to_anchor=(1.01, 0., .04, 1.),
                               bbox_transform=axs[2].transAxes, borderpad=0)
-        plt.colorbar(im, cax=axin)    
+        plt.colorbar(im, cax=axin)
     return axs
 
 
@@ -213,7 +222,7 @@ def plot_stress(dfgrd_list, maxindex, params, eps_s, axs, do_plot=True,
 
 
 # %% Main code
-if __name__ == '__main__':  
+if __name__ == '__main__':
 #    from constants import f as F
     # %% Get related quantities
     params = dict(G=80e3, D=2e-1, model='Neo-Hookean')
@@ -234,7 +243,7 @@ if __name__ == '__main__':
     for i, dfgrd11 in enumerate(f11):
         dfgrd22 = f22[i]
         dfgrd33 = f33[i]
-        dfgrd_list_biaxial.append(np.diagflat([dfgrd11, dfgrd22, dfgrd33]))  
+        dfgrd_list_biaxial.append(np.diagflat([dfgrd11, dfgrd22, dfgrd33]))
     # Generate for shear
     dfgrd_list_shear = [np.eye(3) for i in range(NPTS)]
     f12 = np.linspace(0., 1., NPTS)
@@ -275,5 +284,4 @@ if __name__ == '__main__':
             fontsize=12, fontweight='bold', va='top')
     fig.subplots_adjust(right=.95)
     fig.savefig('./plots/singleelem.png')
-    
-    
+

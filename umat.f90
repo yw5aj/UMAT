@@ -3,10 +3,10 @@ module umatutils
     implicit none
     private
     public dp, delta, m31tensorprod, m33det, m33tensorprod, mapnotation, pi,&
-        eps, m33eigvalsh, m33eigvect, ii
+        eps, m33eigvalsh, m33eigvect, ii, ccc2ccj, m33inv
     integer, parameter :: dp=kind(0.d0)
     real(dp), parameter :: delta(3, 3) = reshape([1, 0, 0, 0, 1, 0, 0, 0, 1],&
-        [3, 3]), eps = 1e-8_dp, pi = 4*atan(1._dp), ii(3, 3, 3, 3) = reshape([&
+        [3, 3]), eps = 1e-6_dp, pi = 4*atan(1._dp), ii(3, 3, 3, 3) = reshape([&
         1._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
         0._dp, 0.5_dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0._dp, 0._dp,&
         0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp, 0._dp, 0.5_dp, 0._dp, 0._dp,&
@@ -19,31 +19,80 @@ module umatutils
         [3, 3, 3, 3])
         
 contains
-    function m33eigvalsh(a) result(eigval)
+    function m33inv(a) result(ainv)
+        !! Inverse the real non-symmetric 3x3 matrix
+        real(dp), intent(in) :: a(3, 3)
+        real(dp) :: ainv(3, 3), cofactor(3, 3), det
+        det = m33det(a)
+        cofactor(1,1) = +(a(2,2)*a(3,3)-a(2,3)*a(3,2))
+        cofactor(1,2) = -(a(2,1)*a(3,3)-a(2,3)*a(3,1))
+        cofactor(1,3) = +(a(2,1)*a(3,2)-a(2,2)*a(3,1))
+        cofactor(2,1) = -(a(1,2)*a(3,3)-a(1,3)*a(3,2))
+        cofactor(2,2) = +(a(1,1)*a(3,3)-a(1,3)*a(3,1))
+        cofactor(2,3) = -(a(1,1)*a(3,2)-a(1,2)*a(3,1))
+        cofactor(3,1) = +(a(1,2)*a(2,3)-a(1,3)*a(2,2))
+        cofactor(3,2) = -(a(1,1)*a(2,3)-a(1,3)*a(2,1))
+        cofactor(3,3) = +(a(1,1)*a(2,2)-a(1,2)*a(2,1))
+        ainv = transpose(cofactor) / det
+    end function m33inv
+    
+    function ccc2ccj(ccc, sigma) result(ccj)
+        !! Convert ccc to ccj given sigma
+        real(dp), intent(in) :: ccc(3, 3, 3, 3), sigma(3, 3)
+        real(dp) :: ccj(3, 3, 3, 3)
+        integer :: i, j, k, l
+        do i = 1, 3
+            do j = i, 3
+                do k = 1, 3
+                    do l = k, 3
+                        ccj(i, j, k, l) = ccc(i, j, k, l) + (&
+                            delta(i, k) * sigma(j, l) + &
+                            delta(i, l) * sigma(j, k) + &
+                            delta(j, k) * sigma(i, l) + &
+                            delta(j, l) * sigma(i, k)) / 2
+                        ! Fill l/k symmetry
+                        if (l /= k) then
+                            ccj(i, j, l, k) = ccj(i, j, k, l)
+                        end if
+                    end do
+                end do
+                ! Fill i/j symmetry
+                if (i /= j) then
+                    ccj(j, i, :, :) = ccj(i, j, :, :)
+                end if
+            end do
+        end do
+        return
+    end function ccc2ccj
+
+    function m33eigvalsh(a) result(w)
         !! Returns the eigenvalues of a 3x3 real symmetric matrix
         !! Unless lambda1 = lambda2 = lambda3, lambda1 > lambda2
         real(dp), intent(in) :: a(3, 3)
-        real(dp) :: c2, c1, c0, p, q, phi, x(3), eigval(3)
-        integer :: i
-        c2 = -a(1, 1) - a(2, 2) - a(3, 3)
-        c1 = a(1, 1) * a(2, 2) + a(1, 1) * a(3, 3) + a(2, 2) * a(3, 3)&
-            -a(1, 2)**2 - a(1, 3)**2 - a(2, 3)**2
-        c0 = a(1, 1) * a(2, 3)**2 + a(2, 2) * a(1, 3)**2 + a(3, 3)*a(1, 2)**2&
-            - a(1, 1) * a(2, 2) * a(3, 3) - 2 * a(1, 3) * a(1, 2) * a(2, 3)
-        p = c2**2 - 3 * c1
-        q = -27._dp / 2 * c0 - c2**3 + 9._dp / 2 * c2 * c1
-        ! Extreme case is p=q=0, where x(1)=x(2)=x(3)=tr(a)/3
-        if((abs(p) < eps) .and. (abs(q) < eps)) then
-            eigval = -c2 / 3
+        real(dp) :: w(3), m, p, q, phi, a_mi(3, 3), c, s, sqp, sq3, p3_q2
+        m = (a(1, 1) + a(2, 2) + a(3, 3)) / 3
+        a_mi = a - m * delta
+        q = m33det(a_mi) / 2
+        p = sum(a_mi ** 2) / 6
+        p3_q2 = p ** 3 - q ** 2
+        if (abs(p - q) < eps) then
+            w = m
+        else if (abs(p3_q2) < eps) then
+            sqp = sqrt(p)
+            w(1) = m - 2 * sqp
+            w(2:3) = m + sqp
         else
-            phi = 1._dp / 3 * atan(sqrt(p**3 - q**2) / q)
-            ! Note that phi (-pi/6, pi/6), so x(1)=2*cos(phi) > 0 and
-            ! x(2) = 2*cos(phi+2*pi/3) <0, so x(2) /= x(1), but x(2) may be 
-            ! equal to x(3) since x(3) = 2*cos(phi-2*pi/3)
-            x(1) = 2 * cos(phi)
-            x(2) = 2 * cos(phi + 2*pi/3)
-            x(3) = 2 * cos(phi - 2*pi/3)
-            eigval = (sqrt(p) * x - c2) / 3
+            phi = atan(sqrt(p3_q2) / q) / 3
+            if (phi <= 0) then
+                phi = pi + phi
+            end if
+            c = cos(phi)
+            s = sin(phi)
+            sqp = sqrt(p)
+            sq3 = sqrt(3._dp)
+            w(1) = m + 2 * sqp * c
+            w(2) = m - sqp * (c + sq3 * s)
+            w(3) = m - sqp * (c - sq3 * s)
         end if
         return
     end function m33eigvalsh
